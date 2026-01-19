@@ -3,8 +3,8 @@ TARGET := emulator
 CXX := g++
 CXXFLAGS := -Wall -Wextra -O3 -std=c++20
 
-SRCS_EMULATOR := $(shell find src/emulator -name "*.cpp")
-OBJS_EMULATOR := $(SRCS_EMULATOR:.cpp=.o)
+SRCS_COMMON := $(shell find src/emulator src/utils -name "*.cpp")
+OBJS_COMMON := $(SRCS_COMMON:.cpp=.o)
 
 SRCS_FRONTEND := $(shell find src/frontend -name "*.cpp")
 OBJS_FRONTEND := $(SRCS_FRONTEND:.cpp=.o)
@@ -15,16 +15,16 @@ OBJS_FRONTEND_HEADLESS := $(SRCS_FRONTEND_HEADLESS:.cpp=.o)
 
 all: emulator emulator_headless
 
-emulator: $(OBJS_EMULATOR) $(SRCS_FRONTEND)
+emulator: $(OBJS_COMMON) $(SRCS_FRONTEND)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS_FRONTEND)
 
-emulator_headless: $(OBJS_EMULATOR) $(SRCS_FRONTEND_HEADLESS)
+emulator_headless: $(OBJS_COMMON) $(SRCS_FRONTEND_HEADLESS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS_EMULATOR) $(OBJS_FRONTEND) $(OBJS_FRONTEND_HEADLESS) $(TARGET)
+	rm -f $(OBJS_COMMON) $(OBJS_FRONTEND) $(OBJS_FRONTEND_HEADLESS) $(TARGET)
 
 .PHONY: all clean

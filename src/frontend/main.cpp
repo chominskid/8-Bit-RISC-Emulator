@@ -19,7 +19,7 @@
 #include "../../inc/emulator/screen.hpp"
 #include "../../inc/emulator/computer.hpp"
 #include "../../inc/frontend/screen_renderer.hpp"
-#include "../../inc/frontend/split.hpp"
+#include "../../inc/utils/split.hpp"
 
 using namespace std::chrono_literals;
 
