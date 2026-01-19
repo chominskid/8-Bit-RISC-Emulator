@@ -20,6 +20,9 @@
 
 ## Instruction Encoding
 
+**Order**: Big-Endian  
+**Alignment**: 2  
+
 ### Arithmetic \(A\) Instruction Encoding
 
 **`00oooo.. xxxxyyyy`**  
