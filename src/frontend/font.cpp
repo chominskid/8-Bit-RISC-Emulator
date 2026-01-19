@@ -1,4 +1,4 @@
-#include "../inc/screen.hpp"
+#include "../../inc/frontend/screen_renderer.hpp"
 
 /**
 * 8x8 monochrome bitmap fonts for rendering
@@ -22,7 +22,7 @@
 * 0-127 -> font8x8_basic
 * 128-255 -> font8x8_box
 **/
-const uint8_t Screen::FONT[] = {
+const uint8_t ScreenRenderer::FONT[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,   // U+0000 (nul)
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,   // U+0001
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,   // U+0002

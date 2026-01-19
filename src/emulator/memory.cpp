@@ -1,4 +1,4 @@
-#include "../inc/memory.hpp"
+#include "../../inc/emulator/memory.hpp"
 
 MemoryResult::MemoryResult(uint8_t value) :
     signal(Signal::SUCCESS),

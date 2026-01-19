@@ -1,4 +1,4 @@
-#include "../inc/spinlock.hpp"
+#include "../../inc/emulator/spinlock.hpp"
 #include <atomic>
 
 void MSSpinLock::_acquire() {

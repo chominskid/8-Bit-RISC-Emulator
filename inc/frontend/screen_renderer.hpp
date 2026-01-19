@@ -6,7 +6,8 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 
-#include "memory.hpp"
+#include "../emulator/memory.hpp"
+#include "../emulator/screen.hpp"
 
 // 0: BLACK
 // 1: WHITE
@@ -25,10 +26,11 @@
 // E: GRAY
 // F: DARK GRAY
 
-class Screen {
+class ScreenRenderer {
 private:
     static constexpr unsigned int CHAR_HEIGHT = 8;
     static const uint8_t FONT[];
+
     static constexpr sf::Color BG_COLOR = sf::Color(10, 10, 10);
     static constexpr sf::Color COLOR[] {
         sf::Color(BG_COLOR.r,   BG_COLOR.g,   BG_COLOR.b),
@@ -49,32 +51,27 @@ private:
         sf::Color(64,           64,           64      ),
     };
 
-    const unsigned int width;
-    const unsigned int height;
+    Screen *screen;
+
     sf::Image image;
     sf::Texture texture;
     sf::Sprite sprite;
-    MemoryDevicePointer _memory;
 
     void draw_char(unsigned int x, unsigned int y, const uint8_t* bitmap, const sf::Color& foreground, const sf::Color& background);
     void draw_screen();
     void window_handler(unsigned int scale, unsigned int framerate);
 
 public:
-    Screen() = delete;
-    Screen(const Screen&) = delete;
-    Screen(Screen&&) = delete;
+    ScreenRenderer() = delete;
+    ScreenRenderer(const ScreenRenderer&) = delete;
+    ScreenRenderer(ScreenRenderer&&) = delete;
 
-    Screen(
-        unsigned int width,
-        unsigned int height,
+    ScreenRenderer(
+        Screen *screen,
         unsigned int offset_x,
         unsigned int offset_y,
         float scale = 1.0f
     );
-
-    MemoryDevice& memory() const;
-    void debug_print(unsigned int x, unsigned int y, const std::string& str);
 
     void draw(sf::RenderWindow& window);
 };
