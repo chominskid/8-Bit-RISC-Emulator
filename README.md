@@ -1,3 +1,71 @@
+# Emulator
+
+**Usage**: `./emulator <program binary>`  
+
+The emulator will start by copying a simple debug bootloader to address `0x0000`. The program binary of choice will then be copied to address `0x0300`. The program counter starts at address `0x0000`.  
+  
+The emulator will display an 80x50 character screen and a debug overview of the CPU registers and state in a window. The terminal is used as a command prompt to control the emulator.  
+
+## Screen
+
+The screen to the left of the emulator window is an 80x50 character screen. Each character is an 8x8 bitmap character with foreground and background colors selectable from 16 predefined colors. The screen can be controlled through its character memory, located at address `0xE000`. This memory consists of 4000 16-bit words. Each word corresponds to a single character position, in row-major order starting from the top-left corner. All writes to this memory region will immediately update the screen (provided they are not outside the bounds of the screen, as the memory region is expanded to 8192 bytes).
+  
+### Character Memory Word Format
+
+**Order**: Big-Endian  
+**Alignment**: 2  
+  
+`ffffbbbb cccccccc`  
+**f**: foreground color  
+**b**: background color  
+**c**: character  
+
+### Colors
+
+| Code | Color |
+| :----: | :----: |
+| 0000 | Black |
+| 0001 | White |
+| 0010 | Red |
+| 0011 | Orange |
+| 0100 | Yellow |
+| 0101 | Green |
+| 0110 | Blue |
+| 0111 | Purple |
+| 1000 | Dark Red |
+| 1001 | Dark Orange |
+| 1010 | Dark Yellow |
+| 1011 | Dark Green |
+| 1100 | Dark Blue |
+| 1101 | Dark Purple |
+| 1110 | Gray |
+| 1111 | Dark Gray |
+
+### Character Map
+
+See font.cpp  
+  
+## Commands
+| Syntax | Description |
+| :----: | :----: |
+| `run` | Run the CPU as quickly as possible (with no timing overhead). |
+| `run <f>` | Run the CPU at a fixed frequency. |
+| `step` | Execute one CPU cycle. |
+| `step <n>` | Execute `n` CPU cycles as quickly as possible. |
+| `stop` | Stop the CPU if it's running. |
+| `exit` | Close the emulator. |
+
+## Memory Layout
+
+| Address Range | Read/Write | Function |
+| :----: | :----: | :----: |
+| `0000`-`00FF` | R | Bootloader   |
+| `0100`-`01FF` | R/W | Stack        |
+| `0200`-`02FF` | R/W | Zero Page    |
+| `0300`-`....` | R/W | Program |
+| `....`-`DFFF` | R/W | Main Memory |
+| `E000`-`FFFF` | R/W | Character Memory |
+
 # ISA Description
 
 ## Registers

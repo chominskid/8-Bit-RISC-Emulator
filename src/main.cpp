@@ -23,7 +23,6 @@
 using namespace std::chrono_literals;
 
 std::vector<uint8_t> read_binary(const std::string& filename) {
-    std::cout << filename << '\n';
     std::ifstream image(filename, image.binary | image.ate);
     if (!image) {
         std::cerr << "IO error.\n";
@@ -37,7 +36,7 @@ std::vector<uint8_t> read_binary(const std::string& filename) {
 
 int main(int argc, const char* argv[]) {
     if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <program image>\n";
+        std::cerr << "Usage: " << argv[0] << " <program binary>\n";
         return EINVAL;
     }
 
@@ -115,12 +114,12 @@ int main(int argc, const char* argv[]) {
                 computer.run(freq);
             }},
             { "help", [&] () {
-                std::cout << "run:    freerun mode - run the processor as quickly as possible.\n";
-                std::cout << "run f:  frequency mode - run the processor at a fixed frequency f.\n";
-                std::cout << "step:   single step - execute one processor cycle.\n";
-                std::cout << "step n: freerun for n processor cycles.\n";
-                std::cout << "stop:   stop the processor.\n";
-                std::cout << "exit:   close the simulation.\n";
+                std::cout << "run:    Run the CPU as quickly as possible (with no timing overhead).\n";
+                std::cout << "run f:  Run the CPU at a fixed frequency.\n";
+                std::cout << "step:   Execute one CPU cycle.\n";
+                std::cout << "step n: Execute n CPU cycles as quickly as possible.\n";
+                std::cout << "stop:   Stop the CPU if it's running.\n";
+                std::cout << "exit:   Close the emulator.\n";
                 args = { "step" };
             }},
         };
