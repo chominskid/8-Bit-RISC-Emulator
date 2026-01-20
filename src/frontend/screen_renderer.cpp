@@ -22,7 +22,6 @@ void ScreenRenderer::draw_screen() {
             draw_char(x, y, bitmap, COLOR[color_index >> 4], COLOR[color_index & 0x0F]);
         }
     }
-    std::cout << memory.read(0).value << std::endl;
 }
 
 ScreenRenderer::ScreenRenderer(Screen* screen, unsigned int offset_x, unsigned int offset_y, float scale) :
