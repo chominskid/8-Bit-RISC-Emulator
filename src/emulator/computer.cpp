@@ -1,6 +1,5 @@
-#include "../inc/computer.hpp"
-#include "../inc/spinlock.hpp"
-// #include "../../common/common.hpp"
+#include "../../inc/emulator/computer.hpp"
+#include "../../inc/emulator/spinlock.hpp"
 
 #include <atomic>
 #include <bitset>
@@ -569,6 +568,12 @@ void Computer::step(uint64_t count) {
     stop();
     _run.store(true, std::memory_order_relaxed);
     _run_thread = std::thread(&Computer::_step_worker, this, count);
+}
+
+void Computer::step_sync(uint64_t count) {
+    stop();
+    _run.store(true, std::memory_order_relaxed);
+    _step_worker(count);
 }
 
 void Computer::run(double freq) {

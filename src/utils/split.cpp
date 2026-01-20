@@ -1,4 +1,4 @@
-#include "../inc/split.hpp"
+#include "../../inc/utils/split.hpp"
 #include <cctype>
 
 bool is_space(char c) {

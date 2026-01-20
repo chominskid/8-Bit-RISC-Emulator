@@ -72,6 +72,8 @@ public:
 
     // run the computer for count cycles (default 1)
     void step(uint64_t count = 1);
+    // run the computer for count cycles (default 1) in the same thread
+    void step_sync(uint64_t count = 1);
 
     // run the computer at a specified number of cycles per second (default infinity - runs without timer overhead)
     void run(double freq = std::numeric_limits<double>::infinity());

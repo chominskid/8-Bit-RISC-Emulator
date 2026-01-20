@@ -16,9 +16,10 @@
 #include <utility>
 #include <vector>
 
-#include "../inc/screen.hpp"
-#include "../inc/computer.hpp"
-#include "../inc/split.hpp"
+#include "../../inc/emulator/screen.hpp"
+#include "../../inc/emulator/computer.hpp"
+#include "../../inc/frontend/screen_renderer.hpp"
+#include "../../inc/utils/split.hpp"
 
 using namespace std::chrono_literals;
 
@@ -42,7 +43,8 @@ int main(int argc, const char* argv[]) {
 
     Computer computer;
 
-    Screen screen(80, 50, 0, 0, 2.0f);
+    Screen screen(80, 50);
+    ScreenRenderer screen_renderer(&screen, 0, 0, 2.0f);
     const size_t screen_memory_size = screen.memory().size();
     
     MemoryDevicePointer memory_interface = new InterfaceDevice(MemoryDevice::Access::READ_WRITE);
@@ -181,7 +183,7 @@ int main(int argc, const char* argv[]) {
 
         window.clear();
         window.draw(text);
-        screen.draw(window);
+        screen_renderer.draw(window);
         window.display();
     }
 
