@@ -15,6 +15,7 @@
 #include "../../inc/emulator/computer.hpp"
 #include "../../inc/emulator/screen.hpp"
 #include "../../inc/utils/split.hpp"
+#include "../../inc/utils/arg_parse.hpp"
 
 using namespace std::chrono_literals;
 
@@ -99,8 +100,18 @@ void print_screen(Screen &screen) {
 }
 
 int main(int argc, const char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <program binary>\n";
+    ArgParse args(argc, argv);
+
+    if (auto error = args.get_error()) {
+        std::cerr << "Error parsing arguments: " << *error << std::endl;
+        return EINVAL;
+    }
+
+    auto step_limit_str = args.take_option("--step-limit");
+    auto program_file = args.take_normal();
+
+    if (args.has_remaining() || !program_file.has_value()) {
+        std::cerr << "Usage: " << argv[0] << " <program binary> [--step-limit n]" << std::endl;
         return EINVAL;
     }
 
@@ -121,13 +132,12 @@ int main(int argc, const char* argv[]) {
     computer.debug_init();
 
     memory_interface->debug_write<Endian::LITTLE>(0x0000, read_binary("./programs/DEBUG_BOOTLOADER.bin"));
-    memory_interface->debug_write<Endian::BIG>(0x0300, read_binary(argv[1]));
+    memory_interface->debug_write<Endian::BIG>(0x0300, read_binary(*program_file));
 
     computer.reset();
 
-    computer.step_sync(100000);
-    computer.stop();
+    int step_limit = step_limit_str.has_value() ? std::stoi(*step_limit_str) : 10000;
+    computer.step_sync(step_limit);
 
-    // std::cout << computer.debug_state() << std::endl;
     print_screen(screen);
 }
