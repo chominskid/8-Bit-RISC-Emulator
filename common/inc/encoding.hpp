@@ -164,6 +164,8 @@ enum class Encoding : uint16_t {
     IH_SHIFT = 4,
     IH_MASK = 0x0300,
 
+    I_WIDTH = 6,
+
     M_SHIFT = 10,
     M_MASK = 0x1C00,
 
