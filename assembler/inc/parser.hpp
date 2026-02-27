@@ -10,6 +10,8 @@
 
 #include "../../common/inc/encoding.hpp"
 
+using TokenPtr = std::unique_ptr<class Token>;
+
 class Token {
 public:
     enum class Type : uint8_t {
@@ -26,6 +28,7 @@ public:
     size_t line;
 
     virtual ~Token();
+    virtual TokenPtr clone() const;
     virtual Type type() const;
     
     template <typename T>
@@ -38,8 +41,6 @@ public:
         return *static_cast<T*>(this);
     }
 };
-
-using TokenPtr = std::unique_ptr<Token>;
 
 class IntegerArg : public Token {
 private:
@@ -94,6 +95,7 @@ public:
         return result;
     }
 
+    TokenPtr clone() const override;
     Type type() const override;
     std::string to_string() const;
 };
@@ -147,6 +149,7 @@ public:
 
     Opcode(Value value);
 
+    TokenPtr clone() const override;
     Type type() const override;
 };
 
@@ -159,6 +162,7 @@ public:
 
     Condition(JumpCond cond, bool negate);
 
+    TokenPtr clone() const override;
     Type type() const override;
 };
 
@@ -170,6 +174,8 @@ public:
     Register value;
 
     DataRegisterArg(Register value);
+
+    TokenPtr clone() const override;
     Type type() const override;
 };
 
@@ -188,6 +194,8 @@ public:
     Value value;
 
     WideRegisterArg(Value value);
+
+    TokenPtr clone() const override;
     Type type() const override;
 };
 
@@ -203,6 +211,8 @@ public:
     Value value;
 
     Directive(Value value);
+
+    TokenPtr clone() const override;
     Type type() const override;
 };
 
@@ -214,6 +224,8 @@ public:
     size_t address;
 
     LabelArg(std::string&& value);
+
+    TokenPtr clone() const override;
     Type type() const override;
 };
 
@@ -224,7 +236,11 @@ public:
     std::string value;
 
     LabelDeclaration(std::string&& value);
+
+    TokenPtr clone() const override;
     Type type() const override;
 };
+
+extern const std::unordered_map<std::string, TokenPtr> KEYWORDS;
 
 class Program parse(const std::string& str);

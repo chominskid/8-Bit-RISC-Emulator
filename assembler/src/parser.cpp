@@ -5,100 +5,10 @@
 #include <cctype>
 #include <format>
 #include <functional>
-#include <iostream>
 #include <iterator>
 #include <memory>
-#include <stdexcept>
 #include <unordered_map>
 #include <vector>
-
-Token::~Token() = default;
-
-Token::Type Token::type() const {
-    throw std::runtime_error("bruh");
-}
-
-IntegerArg::IntegerArg(std::string&& value, uint8_t base, bool negative) :
-    value(std::forward<std::string>(value)),
-    base(base),
-    negative(negative)
-{}
-
-Token::Type IntegerArg::type() const {
-    return TYPE;
-}
-
-std::string IntegerArg::to_string() const {
-    const char* base_str = "";
-    switch (base) {
-        case 2: base_str = "0b"; break;
-        case 8: base_str = "0"; break;
-        case 16: base_str = "0x"; break;
-        default: break;
-    }
-    return std::format("{}{}{}", negative ? "-" : "", base_str, value);
-}
-
-Opcode::Opcode(Value value) :
-    value(value)
-{}
-
-Token::Type Opcode::type() const {
-    return TYPE;
-}
-
-Condition::Condition(JumpCond cond, bool negate) :
-    negate(negate),
-    cond(cond)
-{}
-
-Token::Type Condition::type() const {
-    return TYPE;
-}
-
-DataRegisterArg::DataRegisterArg(Register value) :
-    value(value)
-{}
-
-Token::Type DataRegisterArg::type() const {
-    return TYPE;
-}
-
-WideRegisterArg::WideRegisterArg(Value value) :
-    value(value)
-{}
-
-const std::unordered_map<std::string, WideRegisterArg::Value> WideRegisterArg::TRANSL {
-
-};
-
-Token::Type WideRegisterArg::type() const {
-    return TYPE;
-}
-
-Directive::Directive(Value value) :
-    value(value)
-{}
-
-Token::Type Directive::type() const {
-    return TYPE;
-}
-
-LabelArg::LabelArg(std::string&& value) :
-    value(std::forward<std::string>(value))
-{}
-
-Token::Type LabelArg::type() const {
-    return TYPE;
-}
-
-LabelDeclaration::LabelDeclaration(std::string&& value) :
-    value(std::forward<std::string>(value))
-{}
-
-Token::Type LabelDeclaration::type() const {
-    return TYPE;
-}
 
 std::string to_lower(const std::string& str) {
     std::string str2;
@@ -124,84 +34,6 @@ bool is_name_char(char c) {
 bool is_digit(char c, uint8_t base) {
     return IntegerArg::_digit_value(c, base) < base;
 }
-
-const std::unordered_map<std::string, TokenPtr(*)(const std::string&)> KEYWORDS {
-    { "nop", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::NOP); }},
-    { "add", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::ADD); }},
-    { "adc", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::ADC); }},
-    { "sub", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::SUB); }},
-    { "sbc", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::SBC); }},
-    { "cmp", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::CMP); }},
-    { "cmc", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::CMC); }},
-    { "and", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::AND); }},
-    { "or", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::OR); }},
-    { "xor", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::XOR); }},
-    { "shl", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::SHL); }},
-    { "shr", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::SHR); }},
-    { "mov", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::MOV); }},
-    { "mvh", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::MVH); }},
-    { "tsb", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::TSB); }},
-    { "seb", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::SEB); }},
-    { "jmp", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::JMP); }},
-    { "rjmp", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::RJMP); }},
-    { "jbl", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::JBL); }},
-    { "jbh", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::JBH); }},
-    { "call", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::CALL); }},
-    { "rcall", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::RCALL); }},
-    { "cbl", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::CBL); }},
-    { "cbh", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::CBH); }},
-    { "ret", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::RET); }},
-    { "retcall", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::RETCALL); }},
-    { "ld", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::LD); }},
-    { "ldr", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::LDR); }},
-    { "lds", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::LDS); }},
-    { "ldf", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::LDF); }},
-    { "st", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::ST); }},
-    { "sts", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::STS); }},
-    { "stf", [] (const std::string& str) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::STF); }},
-
-    { "c", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::C, false); }},
-    { "gteu", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::C, false); }},
-    { "v", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::V, false); }},
-    { "n", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::N, false); }},
-    { "z", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::Z, false); }},
-    { "eq", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::Z, false); }},
-    { "gt", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::G, false); }},
-    { "gte", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::GE, false); }},
-    { "gtu", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::GU, false); }},
-    { "nc", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::C, true); }},
-    { "ltu", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::C, true); }},
-    { "nv", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::V, true); }},
-    { "nn", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::N, true); }},
-    { "nz", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::Z, true); }},
-    { "ne", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::Z, true); }},
-    { "lte", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::G, true); }},
-    { "lt", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::GE, true); }},
-    { "lteu", [] (const std::string& str) -> TokenPtr { return std::make_unique<Condition>(JumpCond::GU, true); }},
-
-    { "ra.l", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::RA_L); }},
-    { "ra.h", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::RA_H); }},
-    { "sr", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::SR); }},
-    { "sp", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::SP); }},
-    { "ga", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::GA); }},
-    { "fp", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::GA); }},
-    { "gb", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::GB); }},
-    { "gc", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::GC); }},
-    { "gd", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::GD); }},
-    { "ge.l", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::GE_L); }},
-    { "ge.h", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::GE_H); }},
-    { "gf.l", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::GF_L); }},
-    { "gf.h", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::GF_H); }},
-    { "gg.l", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::GG_L); }},
-    { "gg.h", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::GG_H); }},
-    { "gh.l", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::GH_L); }},
-    { "gh.h", [] (const std::string& str) -> TokenPtr { return std::make_unique<DataRegisterArg>(Register::GH_H); }},
-
-    { "ge", [] (const std::string& str) -> TokenPtr { return std::make_unique<WideRegisterArg>(WideRegisterArg::Value::GE); }},
-    { "gf", [] (const std::string& str) -> TokenPtr { return std::make_unique<WideRegisterArg>(WideRegisterArg::Value::GF); }},
-    { "gg", [] (const std::string& str) -> TokenPtr { return std::make_unique<WideRegisterArg>(WideRegisterArg::Value::GG); }},
-    { "gh", [] (const std::string& str) -> TokenPtr { return std::make_unique<WideRegisterArg>(WideRegisterArg::Value::GH); }},
-};
 
 Program parse(const std::string& str) {
     Program program;
@@ -229,7 +61,6 @@ Program parse(const std::string& str) {
         const size_t end = read_string(is_name_char);
         std::string name = str.substr(i, end - i);
         i = end;
-        
 
         if (i < str.size() && str[i] == ':') {
             if (KEYWORDS.contains(name))
@@ -237,7 +68,7 @@ Program parse(const std::string& str) {
             ++i;
             return std::make_unique<LabelDeclaration>(std::move(name));
         } else if (auto it = KEYWORDS.find(name); it != KEYWORDS.end()) {
-            return it->second(name);
+            return it->second->clone();
         } else {
             return std::make_unique<LabelArg>(std::move(name));
         }

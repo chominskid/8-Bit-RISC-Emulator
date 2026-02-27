@@ -890,8 +890,8 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .independent = true,
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                const auto& cond = args[0]->get<Condition>().value;
-                return encode_jmp_wreg(false, cond->negate, cond->cond, args[1]);
+                const auto& cond = args[0]->get<Condition>();
+                return encode_jmp_wreg(false, cond.negate, cond.cond, args[1]);
             }
         }}
     },
@@ -900,8 +900,8 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .independent = true,
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                const auto& cond = args[0]->get<Condition>().value;
-                return encode_jmp_wreg_off(false, cond->negate, cond->cond, args[0], args[1]);
+                const auto& cond = args[0]->get<Condition>();
+                return encode_jmp_wreg_off(false, cond.negate, cond.cond, args[0], args[1]);
             }
         }}
     },
@@ -910,8 +910,8 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .independent = true,
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                const auto& cond = args[0]->get<Condition>().value;
-                return encode_jmp_wreg(true, cond->negate, cond->cond, args[0]);
+                const auto& cond = args[0]->get<Condition>();
+                return encode_jmp_wreg(true, cond.negate, cond.cond, args[0]);
             }
         }}
     },
@@ -920,8 +920,8 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .independent = true,
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                const auto& cond = args[0]->get<Condition>().value;
-                return encode_jmp_wreg_off(true, cond->negate, cond->cond, args[1], args[2]);
+                const auto& cond = args[0]->get<Condition>();
+                return encode_jmp_wreg_off(true, cond.negate, cond.cond, args[1], args[2]);
             }
         }}
     },
@@ -930,8 +930,8 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .independent = false,
         .encoders = {
             { .size = 2, .encode = [] (size_t address, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                const auto& cond = args[0]->get<Condition>().value;
-                return encode_rjmp_label(false, address, cond->negate, cond->cond, args[1]);
+                const auto& cond = args[0]->get<Condition>();
+                return encode_rjmp_label(false, address, cond.negate, cond.cond, args[1]);
             }},
         }
     },
@@ -940,8 +940,8 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .independent = false,
         .encoders = {
             { .size = 2, .encode = [] (size_t address, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                const auto& cond = args[0]->get<Condition>().value;
-                return encode_rjmp_label(true, address, cond->negate, cond->cond, args[1]);
+                const auto& cond = args[0]->get<Condition>();
+                return encode_rjmp_label(true, address, cond.negate, cond.cond, args[1]);
             }},
         }
     },
@@ -950,8 +950,8 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .independent = true,
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                const auto& cond = args[0]->get<Condition>().value;
-                return encode_jmp(false, AddrModeC::RET, cond->negate, cond->cond, 0);
+                const auto& cond = args[0]->get<Condition>();
+                return encode_jmp(false, AddrModeC::RET, cond.negate, cond.cond, 0);
             }},
         }
     },
@@ -960,8 +960,8 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .independent = true,
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                const auto& cond = args[0]->get<Condition>().value;
-                return encode_jmp(true, AddrModeC::RET, cond->negate, cond->cond, 0);
+                const auto& cond = args[0]->get<Condition>();
+                return encode_jmp(true, AddrModeC::RET, cond.negate, cond.cond, 0);
             }},
         }
     },
