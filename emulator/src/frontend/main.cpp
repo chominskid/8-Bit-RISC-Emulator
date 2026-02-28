@@ -116,12 +116,12 @@ int main(int argc, const char* argv[]) {
                 computer.run(freq);
             }},
             { "help", [&] () {
-                std::cout << "run:    Run the CPU as quickly as possible (with no timing overhead).\n";
-                std::cout << "run f:  Run the CPU at a fixed frequency.\n";
-                std::cout << "step:   Execute one CPU cycle.\n";
-                std::cout << "step n: Execute n CPU cycles as quickly as possible.\n";
-                std::cout << "stop:   Stop the CPU if it's running.\n";
-                std::cout << "exit:   Close the emulator.\n";
+                std::cout << "run: Run the CPU as quickly as possible (with no timing overhead).\n";
+                std::cout << "run <f>: Try to run the CPU at a fixed frequency 'f' (Hz).\n";
+                std::cout << "step: Execute one CPU cycle.\n";
+                std::cout << "step <n>: Execute 'n' CPU cycles as quickly as possible.\n";
+                std::cout << "stop: Stop the CPU if it's running.\n";
+                std::cout << "exit: Close the emulator.\n";
                 args = { "step" };
             }},
         };
