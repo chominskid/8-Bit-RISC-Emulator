@@ -296,7 +296,7 @@ This bit is set if and only if the result of the last executed arithmetic operat
 **c**: condition code  
 
 | Syntax | Description | Condition | Encoding |
-| :----: | :----: | :----: |
+| :----: | :----: | :----: | :----: |
 | `c` / `geu` | carry / greater than or equal to unsigned | `c` | `0000` |
 | `v` | overflow | `v` | `0001` |
 | `n` | negative | `n` | `0010` |
