@@ -4,12 +4,14 @@
 
 When launching the emulator, the following occurs in order:
 
-1. The debug bootloader binary (programs/DEBUG_BOOTLOADER.bin) is copied to address `0x0000`.
-2. The chosen program binary is copied to address `0x0300`.
-3. The emulator displays an 80x50 character screen and a debug overview of the CPU state in a window.
-4. The CPU begins execution at the debug bootloader (program counter starts at `0x0000`).
-5. The debug bootloader calls the program at address `0x0300`.
-6. If and when the program returns, the debug bootloader loops indefinitely.
+<ol>
+<li>The debug bootloader binary (programs/DEBUG_BOOTLOADER.bin) is copied to address `0x0000`.</li>
+<li>The chosen program binary is copied to address `0x0300`.</li>
+<li>The emulator displays an 80x50 character screen and a debug overview of the CPU state in a window.</li>
+<li>The CPU begins execution at the debug bootloader (program counter starts at `0x0000`).</li>
+<li>The debug bootloader calls the program at address `0x0300`.</li>
+<li>If and when the program returns, the debug bootloader loops indefinitely.</li>
+</ol>
 
 ## Commands
 The terminal that launched the emulator is used as a command input to the emulator.
@@ -112,7 +114,7 @@ Perform ALU operation on registers x and y, storing the result in x. The operati
 **`01ooooii xxxxiiii`**  
 **o**: ALU operation  
 **x**: operand 1 (D addressing mode)  
-**i**: sign-extended immediate, operand 2  
+**i**: signed immediate, operand 2  
   
 Perform ALU operation on register x and immediate, storing the result in x. The operation may modify the status register.
 
@@ -122,7 +124,7 @@ Perform ALU operation on register x and immediate, storing the result in x. The 
 **s**: 1 = store, 0 = load  
 **m**: base address (M addressing mode)  
 **x**: target register (D addressing mode)  
-**i**: sign-extended immediate, address offset  
+**i**: signed immediate, address offset  
   
 Store/load 1 byte of data at address (base address + immediate) from/to target register.
 
@@ -133,7 +135,7 @@ Store/load 1 byte of data at address (base address + immediate) from/to target r
 **m**: base address (C addressing mode)  
 **n**: negate condition (1)  
 **c**: condition code  
-**i**: sign-extended immediate, address offset  
+**i**: signed immediate, address offset  
   
 Conditionally set pc to address (base address + immediate * 2), optionally saving its old value to ra (before this instruction executes, pc holds the address of the next instruction).
 
@@ -222,46 +224,10 @@ This bit is set if and only if the result of the last executed arithmetic operat
 
 ## ALU Operations
 
-### Add
-
-**code**: `0000`  
-**flags affected**: `cvnz`  
-
-`r = op1 + op2`  
-`c = r & 0x100`  
-`v = (op1 & 0x80) == (op2 & 0x80) && (r & 0x80) != (op2 & 0x80)`  
-`n = r & 0x80`  
-`z = r == 0`  
-`op1 = r`  
-
-### Add with Carry
-
-**code**: `0001`  
-**flags affected**: `cvnz`  
-
-`r = op1 + op2 + c`
-`c = r & 0x100`
-`v = (op1 & 0x80) == (op2 & 0x80) && (r & 0x80) != (op2 & 0x80)`  
-`n = r & 0x80`  
-`z = r == 0`  
-`op1 = r`  
-
-### Subtract
-
-**code**: `0010`  
-**flags affected**: `cvnz`  
-
-`r = op1 + ~op2 + 1`
-`c = r & 0x100`
-`v = (op1 & 0x80) == (op2 & 0x80) && (r & 0x80) != (op2 & 0x80)`  
-`n = r & 0x80`  
-`z = r == 0`  
-`op1 = r`  
-
 | Code | Name | Flags Affected | Effect |
 | :----: | :----: | :----: | :----: |
-| `0000` | `add`  | `cvnz` | `r = op1 + op2`  `c = r < op1`, `v = (op1 & 0x80) == (op2 & 0x80) && (r & 0x80) != (op2 & 0x80)`, `n = r & 0x80`, `z = r == 0`, `op1 = r`     |
-| `0001` | `adc`  | `cvnz` | `r = op1 + op2 + c`, `c = r < op1`, `v = (op1 & 0x80) == (op2 & 0x80) && (r & 0x80) != (op2 & 0x80)`, `n = r & 0x80`, `z = r == 0`, `op1 = r` |
+| `0000` | `add`  | `cvnz` | `op1 += op2`                                                                  |
+| `0001` | `adc`  | `cvnz` | `op1 += op2 + c`                                                              |
 | `0010` | `sub`  | `cvnz` | `op1 += ~op2 + 1`                                                             |
 | `0011` | `sbc`  | `cvnz` | `op1 += ~op2 + c`                                                             |
 | `0100` | `cmp`  | `cvnz` | `op1 + ~op2 + 1`                                                              |
@@ -279,28 +245,13 @@ This bit is set if and only if the result of the last executed arithmetic operat
 
 
 
-## Assembler Syntax
+## Instruction
 
-| Syntax | Mnemonic | Format | Effect | Encoding(s) |
+| Syntax | Mnemonic | Description | Encoding(s) |
 | :----: | :----: | :----: | :----: |
 | `nop` | no operation | add register gb to register gb | `00110000 01010101` |
 | | | | |
-| `add x, y` | add                 | D | `x += y`, `c = (x) < y`, `v = x`, `n = x & 0x80`, `z = x == 0` | |
-| `adc x, y` | add with carry      | D | `x += y + c` | |
-| `sub x, y` | subtract            | D | `x += ~y + 1` | |
-| `sbc x, y` | subtract with carry | D | `x += ~y + c` | |
-| `cmp x, y` | compare             | D | `x += y` | |
-| `cmc x, y` | compare with carry  | D | `x += y` | |
-| `and x, y` | and                 | D | `x += y` | |
-| `or  x, y` | or                  | D | `x += y` | |
-| `xor x, y` | exclusive or        | D | `x += y` | |
-| `shl x, y` | shift left          | D | `x += y` | |
-| `shr x, y` | shift right         | D | `x += y` | |
-| `mov x, y` | move                | D | `x += y` | |
-| `mvh x, y` | move high           | D | `x += y` | |
-
-
-| `add x, (y/i)` | add | x += y / x += i                                                    | `00000000 xxxxyyyy` / `010000ii xxxxiiii` |
+| `add x, (y/i)` | add | add (register y / immediate i) to register x                                                    | `00000000 xxxxyyyy` / `010000ii xxxxiiii` |
 | `add x, (y/i)` | add with carry | add (register y / immediate i) to register x with carry                              | `00000100 xxxxyyyy` / `010000ii xxxxiiii` |
 | `sub x, (y/i)` | subtract | subtract (register y / immediate i) from register x                                        | `00001000 xxxxyyyy` / `010010ii xxxxiiii` |
 | `sbc x, (y/i)` | subtract with carry | subtract (register y / immediate i) from register x with carry                  | `00001100 xxxxyyyy` / `010010ii xxxxiiii` |
@@ -313,30 +264,30 @@ This bit is set if and only if the result of the last executed arithmetic operat
 | `shr x, (y/i)` | shift right | shift register x right by (register y / immediate i) bits                               | `00101000 xxxxyyyy` / `01101000 xxxx0iii` |
 | `mov x, (y/i)` | move | move (register y / immediate i) to register x                                                  | `00110000 xxxxyyyy` / `011100ii xxxxiiii` |
 | `mvh x, (y/i)` | move high | move highest 2 bits of (register y / immediate i) to highest 2 bits of register x         | `00110100 xxxxyyyy` / `01110100 xxxx00ii` |
-<!-- | `tsb x, a, b` | test bits | set z and n to bits a and b of register x respectively                                     | `011110bb xxxxbaaa` |
+| `tsb x, a, b` | test bits | set z and n to bits a and b of register x respectively                                     | `011110bb xxxxbaaa` |
 | `tsb x, y`    | test bits | set z and n to bits (register y & 0x07) and (register y & 0x38) of register x respectively | `00111000 xxxxyyyy` |
 | `seb x, i, s` | set bit | set bit i of register x to s                                                                 | `01111100 xxxxsiii` |
-| `seb x, y` | set bit | set bit (register y & 0x07) of register x to (register y & 0x08)                                | `00111100 xxxxyyyy` | -->
+| `seb x, y` | set bit | set bit (register y & 0x07) of register x to (register y & 0x08)                                | `00111100 xxxxyyyy` |
 | | | | |
-| `jmp [c,] x, i`     | jump                 | jump to address in wide register x with immediate offset i * 2 [if condition c is true]        | `1101xxii nccciiii` |
-| `jmpr [c,] i`       | jump relative        | jump by immediate offset i * 2 [if condition c is true]                                        | `110010ii nccciiii` |
-| `jmpbl [c,] i`      | jump bootloader low  | jump to address offset by immediate i * 2 from bootloader low address [if condition c is true] | `110000ii nccciiii` |
+| `jmp [c,] x, i`     | jump                 | jump to address in wide register x with immediate offset i [if condition c is true]        | `1101xxii nccciiii` |
+| `jmpr [c,] i`       | jump relative        | jump by immediate offset i [if condition c is true]                                        | `110010ii nccciiii` |
+| `jmpbl [c,] i`      | jump bootloader low  | jump to address offset by immediate i from bootloader low address [if condition c is true] | `110000ii nccciiii` |
 | `jmpbh [c,] i`      | jump bootloader high | jump bootloader high [if condition c is true]                                              | `110001ii nccciiii` |
-| `call [c,] x, i`    | call                 | call function at address  [if condition c is true]                       | `1111xxii nccciiii` |
-| `rcall [c,] i`      | call relative        | call function at address (pc + i * 2) [if condition c is true]                                                     | `111010ii nccciiii` |
+| `call [c,] x, i`    | call                 | call function at address in wide register x [if condition c is true]                       | `1111xxii nccciiii` |
+| `rcall [c,] i`      | call relative        | call relative [if condition c is true]                                                     | `111010ii nccciiii` |
 | `clbl [c,] i`       | call bootloader low  | call bootloader low [if condition c is true]                                               | `111000ii nccciiii` |
 | `clbh [c,] i`       | call bootloader high | call bootloader high [if condition c is true]                                              | `111001ii nccciiii` |
 | `ret [c]`           | return               | return [if condition c is true]                                                            | `110011ii nccciiii` |
 | `callret [c,] i`    | call return          | call return [if condition c is true]                                                       | `111011ii nccciiii` |
 | | | | |
-| `ld x, y, i` | load                          | load register y from address in wide register x with immediate offset i | `100xxxii yyyyiiii` |
-| `ldr x, i`   | load relative                 | load register y from address in program counter with immediate offset i | `100010ii xxxxiiii` |
-| `lds x, i`   | load stack                    | load register y from stack address with immediate offset i | `100000ii xxxxiiii` |
-| `ldf x, i`   | load frame                    | load register y from frame address with immediate offset i | `100001ii xxxxiiii` |
+| `ld x, y, i` | load                          | `100xxxii yyyyiiii` |
+| `ldr x, i`   | load relative                 | `100010ii xxxxiiii` |
+| `lds x, i`   | load stack                    | `100000ii xxxxiiii` |
+| `ldf x, i`   | load frame                    | `100001ii xxxxiiii` |
 | | | | |
-| `st x, y, i` | store                         | store register y at address in wide register x with immediate offset i | `101xxxii yyyyiiii` |
-| `sts x, i`   | store stack                   | store register y at stack address with immediate offset i | `101000ii xxxxiiii` |
-| `stf x, i`   | store frame                   | store register y at frame address with immediate offset i | `101001ii xxxxiiii` |
+| `st x, y, i` | store                         | `101xxxii yyyyiiii` |
+| `sts x, i`   | store stack                   | `101000ii xxxxiiii` |
+| `stf x, i`   | store frame                   | `101001ii xxxxiiii` |
 
 ### Condition Encoding
 
@@ -346,23 +297,23 @@ This bit is set if and only if the result of the last executed arithmetic operat
 
 | Syntax | Description | Condition | Encoding |
 | :----: | :----: | :----: | :----: |
-| `c` / `geu` | carry / greater than or equal to unsigned | `c`                   | `0000` |
-| `v`         | overflow                                  | `v`                   | `0001` |
-| `n`         | negative                                  | `n`                   | `0010` |
-| `z` / `eq`  | zero / equal to                           | `z`                   | `0011` |
-| `g`         | greater                                   | `(v ? c : !n) && !z`  | `0100` |
-| `ge`        | greater than or equal to                  | `v ? c : !n`          | `0101` |
-| `gu`        | greater than unsigned                     | `c && !z`             | `0110` |
+| `c` / `geu` | carry / greater than or equal to unsigned | `c` | `0000` |
+| `v` | overflow | `v` | `0001` |
+| `n` | negative | `n` | `0010` |
+| `z` / `eq` | zero / equal to | `z` | `0011` |
+| `g` | greater | `(v ? c : !n) && !z` | `0100` |
+| `ge` | greater than or equal to | `v ? c : !n` | `0101` |
+| `gu` | greater than unsigned | `c && !z` | `0110` |
 | | | |
-| `nc` / `lu` | not carry                                 | `!c`                  | `1000` |
-| `nv`        | not overflow                              | `!v`                  | `1001` |
-| `nn`        | not negative                              | `!n`                  | `1010` |
-| `nz` / `ne` | not zero / not equal                      | `!z`                  | `1011` |
-| `le`        | less than or equal to                     | `(v ? !c : n) \|\| z` | `1100` |
-| `l`         | less than                                 | `v ? !c : n`          | `1101` |
-| `leu`       | less than or equal to unsigned            | `!c \|\| z`           | `1110` |
+| `nc` / `lu` | not carry | `!c` | `1000` |
+| `nv` | not overflow | `!v` | `1001` |
+| `nn` | not negative | `!n` | `1010` |
+| `nz` / `ne` | not zero / not equal | `!z` | `1011` |
+| `le` | less than or equal to | `(v ? !c : n) \|\| z` | `1100` |
+| `l` | less than | `v ? !c : n` | `1101` |
+| `leu` | less than or equal to unsigned | `!c \|\| z` | `1110` |
 | | | |
-|             | always (specified by omitting condition)  | `true`                | `0111` |
+| | always (specified by omitting condition) | `true` | `0111` |
 
 ## Memory Layout
 
