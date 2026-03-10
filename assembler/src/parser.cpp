@@ -66,16 +66,18 @@ Program parse(const std::string& str) {
             if (KEYWORDS.contains(name))
                 throw AssemblerError("Label name is a reserved keyword.");
             ++i;
-            return std::make_unique<LabelDeclaration>(std::move(name));
+            return std::make_unique<LabelDeclaration>(line, std::move(name));
         } else if (auto it = KEYWORDS.find(name); it != KEYWORDS.end()) {
-            return it->second->clone();
+            return it->second(line);
         } else {
-            return std::make_unique<LabelArg>(std::move(name));
+            return std::make_unique<LabelArg>(line, std::move(name));
         }
     };
 
     auto read_number = [&] () -> TokenPtr {
         const bool negative = str[i] == '-';
+        if (negative)
+            ++i;
 
         uint8_t base = 10;
         if (str[i] == '0') {
@@ -100,7 +102,7 @@ Program parse(const std::string& str) {
         const size_t end = read_string(std::bind(is_digit, std::placeholders::_1, base));
         std::string num = str.substr(i, end - i);
         i = end;
-        return std::make_unique<IntegerArg>(std::move(num), base, negative);
+        return std::make_unique<IntegerArg>(line, std::move(num), base, negative);
     };
 
     auto push_statement = [&] () {

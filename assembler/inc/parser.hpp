@@ -9,6 +9,7 @@
 #include <unordered_map>
 
 #include "../../common/inc/encoding.hpp"
+#include "translator.hpp"
 
 using TokenPtr = std::unique_ptr<class Token>;
 
@@ -26,6 +27,8 @@ public:
     };
 
     size_t line;
+
+    Token(size_t line);
 
     virtual ~Token();
     virtual TokenPtr clone() const;
@@ -63,7 +66,7 @@ public:
     uint8_t base;
     bool negative;
 
-    IntegerArg(std::string&& value, uint8_t base, bool negative);
+    IntegerArg(size_t line, std::string&& value, uint8_t base, bool negative);
 
     template <typename Int>
     std::optional<Int> try_as() const {
@@ -72,7 +75,6 @@ public:
 
         UInt result = 0;
         for (size_t i = 0; i < value.size(); ++i) {
-            // const char c = value[value.size() - i - 1];
             const char c = value[i];
             const UInt result_old = result;
             result *= base;
@@ -118,8 +120,6 @@ public:
         SHR,
         MOV,
         MVH,
-        TSB,
-        SEB,
 
         JMP,
         RJMP,
@@ -130,7 +130,7 @@ public:
         CBL,
         CBH,
         RET,
-        RETCALL,
+        CALLRET,
 
         LD,
         LDR,
@@ -139,15 +139,17 @@ public:
 
         ST,
         STS,
-        STF
+        STF,
+
+        PUSH,
+        POP,
     };
 
-    static const std::unordered_map<std::string, Value> TRANSL;
     static constexpr Type TYPE = Type::OPCODE;
 
     Value value;
 
-    Opcode(Value value);
+    Opcode(size_t line, Value value);
 
     TokenPtr clone() const override;
     Type type() const override;
@@ -160,7 +162,7 @@ public:
 
     static constexpr Type TYPE = Type::CONDITION;
 
-    Condition(JumpCond cond, bool negate);
+    Condition(size_t line, JumpCond cond, bool negate);
 
     TokenPtr clone() const override;
     Type type() const override;
@@ -173,7 +175,7 @@ public:
 
     Register value;
 
-    DataRegisterArg(Register value);
+    DataRegisterArg(size_t line, Register value);
 
     TokenPtr clone() const override;
     Type type() const override;
@@ -182,6 +184,7 @@ public:
 class WideRegisterArg : public Token {
 public:
     enum class Value : uint8_t {
+        RA,
         GE,
         GF,
         GG,
@@ -193,7 +196,7 @@ public:
 
     Value value;
 
-    WideRegisterArg(Value value);
+    WideRegisterArg(size_t line, Value value);
 
     TokenPtr clone() const override;
     Type type() const override;
@@ -210,7 +213,7 @@ public:
 
     Value value;
 
-    Directive(Value value);
+    Directive(size_t line, Value value);
 
     TokenPtr clone() const override;
     Type type() const override;
@@ -223,7 +226,7 @@ public:
     std::string value;
     size_t address;
 
-    LabelArg(std::string&& value);
+    LabelArg(size_t line, std::string&& value);
 
     TokenPtr clone() const override;
     Type type() const override;
@@ -235,12 +238,12 @@ public:
 
     std::string value;
 
-    LabelDeclaration(std::string&& value);
+    LabelDeclaration(size_t line, std::string&& value);
 
     TokenPtr clone() const override;
     Type type() const override;
 };
 
-extern const std::unordered_map<std::string, TokenPtr> KEYWORDS;
+extern const std::unordered_map<std::string, TokenPtr(*)(size_t line)> KEYWORDS;
 
 class Program parse(const std::string& str);

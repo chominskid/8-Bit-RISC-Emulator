@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <format>
 #include <sstream>
+#include <stdexcept>
 #include <type_traits>
 #include <unordered_map>
 
@@ -194,8 +195,6 @@ std::string Signature::to_string() const {
         { Opcode::Value::SHR, "shr" },
         { Opcode::Value::MOV, "mov" },
         { Opcode::Value::MVH, "mvh" },
-        { Opcode::Value::TSB, "tsb" },
-        { Opcode::Value::SEB, "seb" },
         { Opcode::Value::JMP, "jmp" },
         { Opcode::Value::RJMP, "rjmp" },
         { Opcode::Value::JBL, "jbl" },
@@ -205,7 +204,7 @@ std::string Signature::to_string() const {
         { Opcode::Value::CBL, "cbl" },
         { Opcode::Value::CBH, "cbh" },
         { Opcode::Value::RET, "ret" },
-        { Opcode::Value::RETCALL, "retcall" },
+        { Opcode::Value::CALLRET, "callret" },
         { Opcode::Value::LD, "ld" },
         { Opcode::Value::LDR, "ldr" },
         { Opcode::Value::LDS, "lds" },
@@ -213,6 +212,8 @@ std::string Signature::to_string() const {
         { Opcode::Value::ST, "st" },
         { Opcode::Value::STS, "sts" },
         { Opcode::Value::STF, "stf" },
+        { Opcode::Value::PUSH, "push" },
+        { Opcode::Value::POP, "pop" },
     };
 
     std::stringstream s;
@@ -252,6 +253,31 @@ bool check_width_signed(Int value, int width) {
     const UInt MASK = ~(UInt)0 << (width - 1);
     const UInt REM = x & MASK;
     return REM == 0 || REM == MASK;
+}
+
+AddrModeC get_addr_mode_c(WideRegisterArg::Value reg) {
+    return (AddrModeC)(*reg - *WideRegisterArg::Value::GE + *AddrModeC::GE);
+}
+
+std::optional<AddrModeM> get_addr_mode_m(WideRegisterArg::Value reg) {
+    switch (reg) {
+        case WideRegisterArg::Value::GE: return AddrModeM::GE;
+        case WideRegisterArg::Value::GF: return AddrModeM::GF;
+        case WideRegisterArg::Value::GG: return AddrModeM::GG;
+        case WideRegisterArg::Value::GH: return AddrModeM::GH;
+        default: return std::nullopt;
+    }
+}
+
+std::pair<Register, Register> wreg_to_regs(WideRegisterArg::Value reg) {
+    switch (reg) {
+        case WideRegisterArg::Value::RA: return { Register::RA_L, Register::RA_H };
+        case WideRegisterArg::Value::GE: return { Register::GE_L, Register::GE_H };
+        case WideRegisterArg::Value::GF: return { Register::GF_L, Register::GF_H };
+        case WideRegisterArg::Value::GG: return { Register::GG_L, Register::GG_H };
+        case WideRegisterArg::Value::GH: return { Register::GH_L, Register::GH_H };
+    }
+    throw std::runtime_error("something odd happened");
 }
 
 uint16_t encode_reg_imm_alu(ALUOp op, Register reg, uint8_t imm) {
@@ -302,8 +328,7 @@ Encoder::Result encode_mov_reg_imm(const std::vector<TokenPtr>& args) {
 }
 
 Encoder::Result encode_mov_wreg_imm(WideRegisterArg::Value reg, uint16_t imm) {
-    const Register reg_low = (Register)(*Register::GE_L + *reg * 2);
-    const Register reg_high = (Register)(*reg_low + 1);
+    const auto[reg_low, reg_high] = wreg_to_regs(reg);
 
     Encoder::Result result;
     result.append(encode_mov_reg_imm(reg_low, imm));
@@ -342,14 +367,6 @@ Encoder::Result encode_reg_imm_shift(ALUOp op, const std::vector<TokenPtr>& args
         | ((*imm << *Encoding::IL_SHIFT) & *Encoding::IL_MASK);
     
     return result;
-}
-
-AddrModeC get_addr_mode_c(WideRegisterArg::Value reg) {
-    return (AddrModeC)(*reg - *WideRegisterArg::Value::GE + *AddrModeC::GE);
-}
-
-AddrModeM get_addr_mode_m(WideRegisterArg::Value reg) {
-    return (AddrModeM)(*reg - *WideRegisterArg::Value::GE + *AddrModeM::GE);
 }
 
 uint16_t encode_jmp(bool call, AddrModeC mode, bool negate, JumpCond cond, uint8_t offset) {
@@ -493,19 +510,25 @@ Encoder::Result encode_mem(bool store, AddrModeM mode, const std::vector<TokenPt
 }
 
 Encoder::Result encode_mem_off(bool store, AddrModeM mode, const std::vector<TokenPtr>& args) {
-    const std::optional<uint8_t> offset = args[2]->get<IntegerArg>().try_as<uint8_t>();
+    const std::optional<uint8_t> offset = args.back()->get<IntegerArg>().try_as<uint8_t>();
     if (!offset || !check_width_signed(*offset, *Encoding::I_WIDTH))
-        return std::format("Immediate {} is too large for memory offset.", args[2]->get<IntegerArg>().to_string());
+        return std::format("Immediate {} is too large for memory offset.", args.back()->get<IntegerArg>().to_string());
 
     return encode_mem(store, args[0]->get<DataRegisterArg>().value, mode, *offset);
 }
 
 Encoder::Result encode_mem_wreg_off(bool store, const std::vector<TokenPtr>& args) {
-    return encode_mem_off(store, get_addr_mode_m(args[1]->get<WideRegisterArg>().value), args);
+    const auto mode = get_addr_mode_m(args[1]->get<WideRegisterArg>().value);
+    if (!mode)
+        return std::format("Invalid addressing mode for memory instruction.");
+    return encode_mem_off(store, *mode, args);
 }
 
 Encoder::Result encode_mem_wreg(bool store, const std::vector<TokenPtr>& args) {
-    return encode_mem(store, get_addr_mode_m(args[1]->get<WideRegisterArg>().value), args);
+    const auto mode = get_addr_mode_m(args[1]->get<WideRegisterArg>().value);
+    if (!mode)
+        return std::format("Invalid addressing mode for memory instruction.");
+    return encode_mem(store, *mode, args);
 }
 
 const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTIONS {
@@ -636,24 +659,6 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 return encode_reg_reg_alu(ALUOp::MOVH, args);
-            }},
-        }
-    },
-    Instruction {
-        .signature = { Opcode::Value::TSB, { Token::Type::DATA_REGISTER, Token::Type::DATA_REGISTER } },
-        .independent = true,
-        .encoders = {
-            { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                return encode_reg_reg_alu(ALUOp::TSB, args);
-            }},
-        }
-    },
-    Instruction {
-        .signature = { Opcode::Value::SEB, { Token::Type::DATA_REGISTER, Token::Type::DATA_REGISTER } },
-        .independent = true,
-        .encoders = {
-            { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                return encode_reg_reg_alu(ALUOp::SEB, args);
             }},
         }
     },
@@ -793,24 +798,6 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
             }},
         }
     },
-    // Instruction {
-    //     .signature = { Opcode::Value::TSB, { Token::Type::DATA_REGISTER, Token::Type::INTEGER, Token::Type::INTEGER } },
-    //     .independent = true,
-    //     .encoders = {
-    //         { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                
-    //         }},
-    //     }
-    // },
-    // Instruction {
-    //     .signature = { Opcode::Value::SEB, { Token::Type::DATA_REGISTER, Token::Type::DATA_REGISTER } },
-    //     .independent = true,
-    //     .encoders = {
-    //         { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-    //             return encode_reg_reg_alu(ALUOp::SEB, args);
-    //         }},
-    //     }
-    // },
 
     Instruction {
         .signature = { Opcode::Value::JMP, { Token::Type::WIDE_REGISTER }},
@@ -876,7 +863,7 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         }
     },
     Instruction {
-        .signature = Signature(Opcode::Value::RETCALL),
+        .signature = Signature(Opcode::Value::CALLRET),
         .independent = true,
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>&) -> Encoder::Result {
@@ -956,7 +943,7 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         }
     },
     Instruction {
-        .signature = Signature(Opcode::Value::RETCALL, { Token::Type::CONDITION }),
+        .signature = Signature(Opcode::Value::CALLRET, { Token::Type::CONDITION }),
         .independent = true,
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
@@ -985,16 +972,7 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         }
     },
     Instruction {
-        .signature = Signature(Opcode::Value::LDS, { Token::Type::DATA_REGISTER, Token::Type::WIDE_REGISTER }),
-        .independent = true,
-        .encoders = {
-            { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                return encode_mem(false, AddrModeM::STACK, args);
-            }},
-        }
-    },
-    Instruction {
-        .signature = Signature(Opcode::Value::LDS, { Token::Type::DATA_REGISTER, Token::Type::WIDE_REGISTER, Token::Type::INTEGER }),
+        .signature = Signature(Opcode::Value::LDS, { Token::Type::DATA_REGISTER, Token::Type::INTEGER }),
         .independent = true,
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
@@ -1003,16 +981,7 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         }
     },
     Instruction {
-        .signature = Signature(Opcode::Value::LDF, { Token::Type::DATA_REGISTER, Token::Type::WIDE_REGISTER }),
-        .independent = true,
-        .encoders = {
-            { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                return encode_mem(false, AddrModeM::FRAME, args);
-            }},
-        }
-    },
-    Instruction {
-        .signature = Signature(Opcode::Value::LDF, { Token::Type::DATA_REGISTER, Token::Type::WIDE_REGISTER, Token::Type::INTEGER }),
+        .signature = Signature(Opcode::Value::LDF, { Token::Type::DATA_REGISTER, Token::Type::INTEGER }),
         .independent = true,
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
@@ -1040,16 +1009,7 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         }
     },
     Instruction {
-        .signature = Signature(Opcode::Value::STS, { Token::Type::DATA_REGISTER, Token::Type::WIDE_REGISTER }),
-        .independent = true,
-        .encoders = {
-            { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                return encode_mem(true, AddrModeM::STACK, args);
-            }},
-        }
-    },
-    Instruction {
-        .signature = Signature(Opcode::Value::STS, { Token::Type::DATA_REGISTER, Token::Type::WIDE_REGISTER, Token::Type::INTEGER }),
+        .signature = Signature(Opcode::Value::STS, { Token::Type::DATA_REGISTER, Token::Type::INTEGER }),
         .independent = true,
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
@@ -1058,16 +1018,7 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         }
     },
     Instruction {
-        .signature = Signature(Opcode::Value::STF, { Token::Type::DATA_REGISTER, Token::Type::WIDE_REGISTER }),
-        .independent = true,
-        .encoders = {
-            { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
-                return encode_mem(true, AddrModeM::FRAME, args);
-            }},
-        }
-    },
-    Instruction {
-        .signature = Signature(Opcode::Value::STF, { Token::Type::DATA_REGISTER, Token::Type::WIDE_REGISTER, Token::Type::INTEGER }),
+        .signature = Signature(Opcode::Value::STF, { Token::Type::DATA_REGISTER, Token::Type::INTEGER }),
         .independent = true,
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
@@ -1075,4 +1026,58 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
             }},
         }
     },
+
+    Instruction {
+        .signature = Signature(Opcode::Value::PUSH, { Token::Type::DATA_REGISTER }),
+        .independent = true,
+        .encoders = {
+            { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+                Encoder::Result result;
+                result.append(encode_mem(true, args[0]->get<DataRegisterArg>().value, AddrModeM::STACK, 0));
+                result.append(encode_reg_imm_alu(ALUOp::ADD, Register::SP, 1));
+                return result;
+            }},
+        }
+    },
+    Instruction {
+        .signature = Signature(Opcode::Value::PUSH, { Token::Type::WIDE_REGISTER }),
+        .independent = true,
+        .encoders = {
+            { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+                Encoder::Result result;
+                const auto [lo, hi] = wreg_to_regs(args[0]->get<WideRegisterArg>().value);
+                result.append(encode_mem(true, lo, AddrModeM::STACK, 0));
+                result.append(encode_mem(true, hi, AddrModeM::STACK, 1));
+                result.append(encode_reg_imm_alu(ALUOp::ADD, Register::SP, 2));
+                return result;
+            }},
+        }
+    },
+
+    Instruction {
+        .signature = Signature(Opcode::Value::POP, { Token::Type::DATA_REGISTER }),
+        .independent = true,
+        .encoders = {
+            { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+                Encoder::Result result;
+                result.append(encode_mem(false, args[0]->get<DataRegisterArg>().value, AddrModeM::STACK, -1));
+                result.append(encode_reg_imm_alu(ALUOp::ADD, Register::SP, -1));
+                return result;
+            }},
+        }
+    },
+    Instruction {
+        .signature = Signature(Opcode::Value::POP, { Token::Type::WIDE_REGISTER }),
+        .independent = true,
+        .encoders = {
+            { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+                Encoder::Result result;
+                const auto [lo, hi] = wreg_to_regs(args[0]->get<WideRegisterArg>().value);
+                result.append(encode_mem(false, lo, AddrModeM::STACK, -2));
+                result.append(encode_mem(false, hi, AddrModeM::STACK, -1));
+                result.append(encode_reg_imm_alu(ALUOp::ADD, Register::SP, -2));
+                return result;
+            }},
+        }
+    }
 };

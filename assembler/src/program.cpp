@@ -76,12 +76,13 @@ Program::Program() :
 {}
 
 void Program::add_instruction(std::vector<TokenPtr>&& args) {
-    const Opcode::Value opcode = args[0]->get<Opcode>().value;
+    // const Opcode::Value opcode = args[0]->get<Opcode>().value;
+    const Opcode opcode(std::move(args[0]->get<Opcode>()));
     args.erase(args.begin());
-    Signature signature(opcode, args);
+    Signature signature(opcode.value, args);
     auto it = INSTRUCTIONS.find(signature);
     if (it == INSTRUCTIONS.end())
-        throw AssemblerError(std::format("Unknown instruction {}", signature.to_string()));
+        throw AssemblerError(std::format("Line {}: Unknown instruction {}", opcode.line, signature.to_string()));
     program.emplace_back(
         next_fixed_address,
         *it,
