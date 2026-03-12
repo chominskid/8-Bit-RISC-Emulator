@@ -54,6 +54,17 @@ struct Encoder {
                 *(it++) = udata >> (8 * (sizeof(Int) - i - 1));
         }
 
+        Result(const std::vector<uint8_t>& data) :
+            _size(data.size())
+        {
+            if (_size > sizeof(_sdata)) {
+                _data = std::make_unique<uint8_t[]>(_size);
+                std::copy(&data[0], &data[_size], &_data[0]);
+            } else {
+                std::copy(&data[0], &data[_size], _sdata);
+            }
+        }
+
         // template <typename Range>
         // requires std::integral<std::ranges::range_value_t<Range>> && std::ranges::sized_range<Range>
         // Result (const Range& range) :

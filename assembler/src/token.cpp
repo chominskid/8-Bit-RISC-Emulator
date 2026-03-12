@@ -16,6 +16,50 @@ Token::Type Token::type() const {
 
 
 
+Data::Data(size_t line) :
+    data(),
+    Token(line)
+{}
+
+Data::Data(std::vector<uint8_t>&& data, size_t line) :
+    data(std::forward<std::vector<uint8_t>>(data)),
+    Token(line)
+{}
+
+Data::Data(const std::vector<uint8_t>& data, size_t line) :
+    data(data),
+    Token(line)
+{}
+
+TokenPtr Data::clone() const {
+    return std::make_unique<Data>(data, line);
+}
+
+Token::Type Data::type() const {
+    return TYPE;
+}
+
+char hex_char(char x) {
+    if (x <= 9)
+        return '0' + x;
+    else
+        return 'A' + x - 10;
+}
+
+std::string Data::to_string() const {
+    std::string str("[");
+    for (size_t i = 0; i < str.size(); ++i) {
+        str.push_back(hex_char(str[i] >> 4));
+        str.push_back(hex_char(str[i] & 0xF));
+        if (i + 1 < str.size())
+            str.append(", ");
+    }
+    str.push_back(']');
+    return str;
+}
+
+
+
 IntegerArg::IntegerArg(size_t line, std::string&& value, uint8_t base, bool negative) :
     value(std::forward<std::string>(value)),
     base(base),

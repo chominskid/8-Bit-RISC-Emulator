@@ -80,4 +80,7 @@ const std::unordered_map<std::string, TokenPtr(*)(size_t line)> KEYWORDS {
     { "gg", [] (size_t line) -> TokenPtr { return std::make_unique<WideRegisterArg>(line, WideRegisterArg::Value::GG); } },
     { "gh", [] (size_t line) -> TokenPtr { return std::make_unique<WideRegisterArg>(line, WideRegisterArg::Value::GH); } },
 
+    { ".move", [] (size_t line) -> TokenPtr { return std::make_unique<Directive>(line, Directive::Value::MOVE); } },
+    { ".byte", [] (size_t line) -> TokenPtr { return std::make_unique<Directive>(line, Directive::Value::BYTE); } },
+    { ".bytes", [] (size_t line) -> TokenPtr { return std::make_unique<Directive>(line, Directive::Value::BYTES); } },
 };

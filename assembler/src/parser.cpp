@@ -24,11 +24,11 @@ bool is_space(char c) {
 }
 
 bool is_first_name_char(char c) {
-    return std::isalpha((unsigned char)c) || c == '_';
+    return std::isalpha((unsigned char)c) || c == '_' || c == '.';
 }
 
 bool is_name_char(char c) {
-    return is_first_name_char(c) || std::isdigit(c) || c == '.';
+    return is_first_name_char(c) || std::isdigit(c);
 }
 
 bool is_digit(char c, uint8_t base) {
@@ -74,6 +74,49 @@ Program parse(const std::string& str) {
         }
     };
 
+    auto read_string_literal = [&] () -> TokenPtr {
+        std::vector<uint8_t> string;
+
+        auto parse_escape = [&] (char c) {
+            switch (c) {
+                case '0':
+                    string.push_back(0);
+                    break;
+                case 'n':
+                    string.push_back('\n');
+                    break;
+                case 'r':
+                    string.push_back('\r');
+                    break;
+                case '\\':
+                    string.push_back('\\');
+                    break;
+                case '"':
+                    string.push_back('"');
+                    break;
+                default:
+                    throw AssemblerError("Invalid escape sequence in string literal.");
+            }
+        };
+
+        for (++i; i < str.size(); ++i) {
+            switch (str[i]) {
+            case '"':
+                ++i;
+                return std::make_unique<Data>(std::move(string), line);
+            case '\\':
+                ++i;
+                parse_escape(str[i]);
+                break;
+            default:
+                string.push_back(str[i]);
+                break;
+            }
+        }
+
+        throw AssemblerError("String literal not terminated.");
+    };
+
     auto read_number = [&] () -> TokenPtr {
         const bool negative = str[i] == '-';
         if (negative)
@@ -105,21 +148,74 @@ Program parse(const std::string& str) {
         return std::make_unique<IntegerArg>(line, std::move(num), base, negative);
     };
 
+    auto parse_move = [&] () {
+        if (current_statement.size() != 2 || current_statement[1]->type() != Token::Type::INTEGER)
+            throw AssemblerError("Invalid arguments to move directive.");
+        const auto address = current_statement[1]->get<IntegerArg>().try_as<size_t>();
+        program.move(current_statement[1]->get<IntegerArg>().as<size_t>());
+    };
+
+    auto parse_byte = [&] () {
+        std::vector<uint8_t> data;
+        for (size_t i = 1; i < current_statement.size(); ++i) {
+            switch (current_statement[i]->type()) {
+            case Token::Type::INTEGER:
+                data.emplace_back(current_statement[i]->get<IntegerArg>().as<uint8_t>());
+                break;
+            case Token::Type::DATA: {
+                const std::vector<uint8_t>& data2 = current_statement[i]->get<Data>().data;
+                data.insert(data.end(), data2.begin(), data2.end());
+                break;
+            }
+            default:
+                throw AssemblerError("Invalid argument to byte directive.");
+            }
+        }
+        program.add_data(data);
+    };
+
+    auto parse_directive = [&] (Directive::Value d) {
+        switch (d) {
+        case Directive::Value::MOVE:
+            parse_move();
+            break;
+        case Directive::Value::BYTE:
+            parse_byte();
+            break;
+        default:
+            break;
+        }
+    };
+
     auto push_statement = [&] () {
-        program.add_instruction(std::move(current_statement));
+        if (current_statement.size() == 0)
+            return;
+
+        switch (current_statement[0]->type()) {
+        case Token::Type::OPCODE:
+            program.add_instruction(std::move(current_statement));
+            break;
+        case Token::Type::DIRECTIVE:
+            parse_directive(current_statement[0]->get<Directive>().value);
+            break;
+        default:
+            throw AssemblerError("Invalid statement.");
+        }
+
         current_statement.clear();
     };
 
     bool in_comment = false;
     bool in_comment_block = false;
 
-    for (; i < str.size(); ++i) {
+    for (; i < str.size();) {
         if (is_space(str[i])) {
             if (str[i] == '\n') {
                 ++line;
                 if (in_comment && !in_comment_block)
                     in_comment = false;
             }
+            ++i;
             continue;
         } else if (str[i] == '#') {
             if (next_char() == '#') {
@@ -130,14 +226,18 @@ Program parse(const std::string& str) {
                     in_comment = true;
                     in_comment_block = true;
                 }
-                i += 1;
-            } else
+                i += 2;
+            } else {
                 in_comment = true;
+                ++i;
+            }
             continue;
         }
 
-        if (in_comment)
+        if (in_comment) {
+            ++i;
             continue;
+        }
 
         TokenPtr token;
 
@@ -145,6 +245,8 @@ Program parse(const std::string& str) {
             token = read_name();
         else if (is_digit(str[i], 10) || (str[i] == '-' && is_digit(next_char(), 10)))
             token = read_number();
+        else if (str[i] == '"')
+            token = read_string_literal();
         else
             throw AssemblerError(std::format("Unexpected character \'{}\'.", str[i]));
 
@@ -162,8 +264,6 @@ Program parse(const std::string& str) {
         switch (token->type()) {
         case Token::Type::LABEL_DECL:
             program.add_label(std::move(token->get<LabelDeclaration>().value));
-            break;
-        case Token::Type::DIRECTIVE:
             break;
         default:
             current_statement.emplace_back(token.release());

@@ -7,15 +7,17 @@
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <vector>
 
 #include "../../common/inc/encoding.hpp"
-#include "translator.hpp"
+#include "error.hpp"
 
 using TokenPtr = std::unique_ptr<class Token>;
 
 class Token {
 public:
     enum class Type : uint8_t {
+        DATA,
         INTEGER,
         OPCODE,
         CONDITION,
@@ -43,6 +45,21 @@ public:
     const T& get() const {
         return *static_cast<T*>(this);
     }
+};
+
+class Data : public Token {
+public:
+    static constexpr Type TYPE = Type::DATA;
+
+    std::vector<uint8_t> data;
+
+    Data(size_t line);
+    Data(std::vector<uint8_t>&& data, size_t line);
+    Data(const std::vector<uint8_t>& data, size_t line);
+
+    TokenPtr clone() const override;
+    Type type() const override;
+    std::string to_string() const;
 };
 
 class IntegerArg : public Token {
@@ -95,6 +112,14 @@ public:
             return std::nullopt;
 
         return result;
+    }
+
+    template <typename Int>
+    Int as() const {
+        const auto result = try_as<Int>();
+        if (!result)
+            throw AssemblerError("Invalid integer literal.");
+        return *result;
     }
 
     TokenPtr clone() const override;
@@ -206,7 +231,8 @@ class Directive : public Token {
 public:
     enum class Value {
         MOVE,
-        HERE,
+        BYTE,
+        BYTES,
     };
 
     static constexpr Type TYPE = Type::DIRECTIVE;

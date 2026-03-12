@@ -1,12 +1,13 @@
 #include "../inc/program.hpp"
 #include "../inc/error.hpp"
 #include <format>
+#include <iostream>
 #include <sstream>
 
 Program::Placeholder::Placeholder(std::optional<size_t> fixed_address, const Instruction& instruction, std::vector<TokenPtr>&& args):
     fixed_address(fixed_address),
     tentative_encoding(0),
-    instruction(instruction),
+    instruction(&instruction),
     args(std::forward<std::vector<TokenPtr>>(args)),
     final(false)
 {
@@ -30,6 +31,14 @@ Program::Placeholder::Placeholder(std::optional<size_t> fixed_address, const Ins
         throw_failure();
 }
 
+Program::Placeholder::Placeholder(std::optional<size_t> fixed_address, const std::vector<uint8_t>& data) :
+    fixed_address(fixed_address),
+    instruction(nullptr),
+    args(),
+    final(true),
+    last_output(data)
+{}
+
 Program::Placeholder::Placeholder(Placeholder&& other) :
     fixed_address(other.fixed_address),
     tentative_address(other.tentative_address),
@@ -42,11 +51,11 @@ Program::Placeholder::Placeholder(Placeholder&& other) :
 {}
 
 bool Program::Placeholder::try_encode() {
-    Encoder::Result result = instruction.encoders[tentative_encoding].encode(tentative_address, args);
+    Encoder::Result result = instruction->encoders[tentative_encoding].encode(tentative_address, args);
     if (!result.has_value()) {
         failures.emplace_back(std::move(result.error()));
         ++tentative_encoding;
-        if (tentative_encoding == instruction.encoders.size())
+        if (tentative_encoding == instruction->encoders.size())
             throw_failure();
         return false;
     } else {
@@ -57,7 +66,7 @@ bool Program::Placeholder::try_encode() {
 
 void Program::Placeholder::throw_failure() {
     std::stringstream s;
-    s << "Could not encode instruction " << instruction.signature.to_string() << ":\n";
+    s << "Could not encode instruction " << instruction->signature.to_string() << ":\n";
     for (size_t i = 0; i < failures.size(); ++i)
         s << "  Encoding " << i << ": " << failures[i] << '\n';
     throw AssemblerError(s.str());
@@ -66,14 +75,27 @@ void Program::Placeholder::throw_failure() {
 size_t Program::Placeholder::tentative_size() const {
     if (final)
         return last_output.size();
-    else if (instruction.encoders[tentative_encoding].size)
-        return *instruction.encoders[tentative_encoding].size;
+    else if (instruction->encoders[tentative_encoding].size)
+        return *instruction->encoders[tentative_encoding].size;
     throw AssemblerError("Could not get tentative size of variable-size instruction encoding.");
 }
 
 Program::Program() :
     next_fixed_address(0)
 {}
+
+void Program::move(size_t address) {
+    // std::cout << "setting address to " << address << '\n';
+    next_fixed_address = address;
+}
+
+void Program::add_data(const std::vector<uint8_t>& data) {
+    program.emplace_back(
+        next_fixed_address,
+        data
+    );
+    next_fixed_address.reset();
+}
 
 void Program::add_instruction(std::vector<TokenPtr>&& args) {
     // const Opcode::Value opcode = args[0]->get<Opcode>().value;
@@ -103,11 +125,8 @@ void Program::add_label(std::string&& value) {
 bool Program::try_assemble_pass() {
     size_t address = 0;
     for (size_t i = 0; i < program.size(); ++i) {
-        if (program[i].fixed_address) {
-            address = *program[i].fixed_address + program[i].tentative_size();
-            continue;
-        }
-
+        if (program[i].fixed_address)
+            address = *program[i].fixed_address;
         program[i].tentative_address = address;
         address += program[i].tentative_size();
     }
