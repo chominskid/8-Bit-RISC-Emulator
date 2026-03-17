@@ -4,10 +4,11 @@
 #include <iostream>
 #include <sstream>
 
-Program::Placeholder::Placeholder(std::optional<size_t> fixed_address, const Instruction& instruction, std::vector<TokenPtr>&& args):
+Program::Placeholder::Placeholder(std::optional<size_t> fixed_address, const Instruction& instruction, std::vector<TokenPtr>&& args, Origin origin):
     fixed_address(fixed_address),
     tentative_encoding(0),
     instruction(&instruction),
+    origin(origin),
     args(std::forward<std::vector<TokenPtr>>(args)),
     final(false)
 {
@@ -31,9 +32,10 @@ Program::Placeholder::Placeholder(std::optional<size_t> fixed_address, const Ins
         throw_failure();
 }
 
-Program::Placeholder::Placeholder(std::optional<size_t> fixed_address, const std::vector<uint8_t>& data) :
+Program::Placeholder::Placeholder(std::optional<size_t> fixed_address, const std::vector<uint8_t>& data, Origin origin) :
     fixed_address(fixed_address),
     instruction(nullptr),
+    origin(origin),
     args(),
     final(true),
     last_output(data)
@@ -44,6 +46,7 @@ Program::Placeholder::Placeholder(Placeholder&& other) :
     tentative_address(other.tentative_address),
     tentative_encoding(other.tentative_encoding),
     instruction(other.instruction),
+    origin(other.origin),
     args(std::move(other.args)),
     failures(std::move(other.failures)),
     last_output(std::move(other.last_output)),
@@ -66,10 +69,10 @@ bool Program::Placeholder::try_encode() {
 
 void Program::Placeholder::throw_failure() {
     std::stringstream s;
-    s << "Could not encode instruction " << instruction->signature.to_string() << ":\n";
+    s << "Could not encode instruction:\n";
     for (size_t i = 0; i < failures.size(); ++i)
         s << "  Encoding " << i << ": " << failures[i] << '\n';
-    throw AssemblerError(s.str());
+    throw AssemblerError(origin, s.str());
 }
 
 size_t Program::Placeholder::tentative_size() const {
@@ -77,7 +80,7 @@ size_t Program::Placeholder::tentative_size() const {
         return last_output.size();
     else if (instruction->encoders[tentative_encoding].size)
         return *instruction->encoders[tentative_encoding].size;
-    throw AssemblerError("Could not get tentative size of variable-size instruction encoding.");
+    throw AssemblerError(origin, "Cannot get tentative size of variable-size instruction encoding.");
 }
 
 Program::Program() :
@@ -89,26 +92,29 @@ void Program::move(size_t address) {
     next_fixed_address = address;
 }
 
-void Program::add_data(const std::vector<uint8_t>& data) {
+void Program::add_data(const std::vector<uint8_t>& data, Origin origin) {
     program.emplace_back(
         next_fixed_address,
-        data
+        data,
+        origin
     );
     next_fixed_address.reset();
 }
 
 void Program::add_instruction(std::vector<TokenPtr>&& args) {
     // const Opcode::Value opcode = args[0]->get<Opcode>().value;
+    const Origin origin{args.front()->origin.start, args.back()->origin.end};
     const Opcode opcode(std::move(args[0]->get<Opcode>()));
     args.erase(args.begin());
     Signature signature(opcode.value, args);
     auto it = INSTRUCTIONS.find(signature);
     if (it == INSTRUCTIONS.end())
-        throw AssemblerError(std::format("Line {}: Unknown instruction {}", opcode.line, signature.to_string()));
+        throw AssemblerError(origin, "Unknown instruction.");
     program.emplace_back(
         next_fixed_address,
         *it,
-        std::forward<std::vector<TokenPtr>>(args)
+        std::forward<std::vector<TokenPtr>>(args),
+        origin
     );
     next_fixed_address.reset();
 
@@ -116,10 +122,10 @@ void Program::add_instruction(std::vector<TokenPtr>&& args) {
         program.back().tentative_address = *program.back().fixed_address;
 }
 
-void Program::add_label(std::string&& value) {
+void Program::add_label(std::string&& value, Origin origin) {
     auto res = labels.emplace(std::forward<std::string>(value), program.size());
     if (!res.second)
-        throw AssemblerError(std::format("Label {} already exists.", res.first->first));
+        throw AssemblerError(origin, "Label already defined.");
 }
 
 bool Program::try_assemble_pass() {
@@ -141,7 +147,7 @@ bool Program::try_assemble_pass() {
             LabelArg& label = arg->get<LabelArg>();
             auto it = labels.find(label.value);
             if (it == labels.end())
-                throw AssemblerError(std::format("Label {} is not defined.", label.value));
+                throw AssemblerError(label.origin, "Label not defined.");
 
             if (it->second == program.size()) {
                 label.address = address;
@@ -160,6 +166,7 @@ bool Program::try_assemble_pass() {
 std::vector<uint8_t> Program::assemble() {
     uint64_t pass_count = 0;
     for (;;) {
+        ++pass_count;
         if (try_assemble_pass())
             break;
     }
@@ -171,6 +178,8 @@ std::vector<uint8_t> Program::assemble() {
             output.resize(req_size);
         std::copy(program[i].last_output.begin(), program[i].last_output.end(), &output[program[i].tentative_address]);
     }
+
+    std::cout << "Passes: " << pass_count << '\n';
 
     return output;
 }

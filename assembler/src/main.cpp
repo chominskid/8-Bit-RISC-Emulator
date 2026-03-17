@@ -1,5 +1,6 @@
 #include "../inc/parser.hpp"
 #include "../inc/program.hpp"
+#include <format>
 #include <fstream>
 #include <iostream>
 
@@ -9,6 +10,45 @@ std::string read_file(const std::string& filename) {
     file.seekg(file.beg);
     file.read(str.data(), str.size());
     return str;
+}
+
+void print_origin(const std::string& str, Origin origin) {
+    static constexpr size_t MAX_LINE_LEN = 80;
+
+    size_t start = str.find_last_of('\n', origin.start);
+    if (start != str.npos) start += 1;
+    else start = 0;
+
+    size_t line = 0;
+    for (size_t i = 0; i < start; ++i) {
+        if (str[i] == '\n')
+            ++line;
+    }
+
+    size_t end = str.find_first_of('\n', origin.end);
+    if (end == str.npos) end = str.size();
+
+    std::vector<std::string> lines;
+    size_t n = 0;
+    for (size_t i = start; i < end; ++i) {
+        if (lines.size() == 0 || str[i] == '\n') {
+            lines.emplace_back(std::format("{}: ", ++line));
+            lines.emplace_back(lines.back().size(), ' ');
+            if (str[i] == '\n')
+                continue;
+        } else if (n == MAX_LINE_LEN) {
+            n = 0;
+            lines.insert(lines.end(), 2, "    ");
+            continue;
+        }
+        lines[lines.size() - 2].push_back(str[i]);
+        char underline = (i >= origin.start && i < origin.end) ? '~' : ' ';
+        lines[lines.size() - 1].push_back(underline);
+    }
+
+    for (const std::string& line: lines) {
+        std::cout << line << '\n';
+    }
 }
 
 int main(int argc, const char* argv[]) {
@@ -64,9 +104,14 @@ int main(int argc, const char* argv[]) {
     }
 
     const std::string file = read_file(*input_filename);
-    Program program = parse(file);
-    const std::vector<uint8_t> result = program.assemble();
-
-    std::ofstream output(*output_filename, output.binary);
-    output.write(reinterpret_cast<const char*>(result.data()), result.size());
+    try {
+        Program program = parse(file);
+        const std::vector<uint8_t> result = program.assemble();
+        std::ofstream output(*output_filename, output.binary);
+        output.write(reinterpret_cast<const char*>(result.data()), result.size());
+    } catch (const AssemblerError& error) {
+        print_origin(file, error.origin);
+        std::cout << error.what() << '\n';
+        return 0;
+    }
 }

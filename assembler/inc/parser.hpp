@@ -28,9 +28,9 @@ public:
         LABEL_DECL,
     };
 
-    size_t line;
+    Origin origin;
 
-    Token(size_t line);
+    Token(Origin origin);
 
     virtual ~Token();
     virtual TokenPtr clone() const;
@@ -53,9 +53,9 @@ public:
 
     std::vector<uint8_t> data;
 
-    Data(size_t line);
-    Data(std::vector<uint8_t>&& data, size_t line);
-    Data(const std::vector<uint8_t>& data, size_t line);
+    Data(Origin origin);
+    Data(std::vector<uint8_t>&& data, Origin origin);
+    Data(const std::vector<uint8_t>& data, Origin origin);
 
     TokenPtr clone() const override;
     Type type() const override;
@@ -83,7 +83,7 @@ public:
     uint8_t base;
     bool negative;
 
-    IntegerArg(size_t line, std::string&& value, uint8_t base, bool negative);
+    IntegerArg(std::string&& value, uint8_t base, bool negative, Origin origin);
 
     template <typename Int>
     std::optional<Int> try_as() const {
@@ -118,7 +118,7 @@ public:
     Int as() const {
         const auto result = try_as<Int>();
         if (!result)
-            throw AssemblerError("Invalid integer literal.");
+            throw AssemblerError(origin, "Invalid integer literal.");
         return *result;
     }
 
@@ -166,15 +166,18 @@ public:
         STS,
         STF,
 
-        PUSH,
-        POP,
+        P_MOV,
+        P_JMP,
+        P_CALL,
+        P_PUSH,
+        P_POP,
     };
 
     static constexpr Type TYPE = Type::OPCODE;
 
     Value value;
 
-    Opcode(size_t line, Value value);
+    Opcode(Value value, Origin origin);
 
     TokenPtr clone() const override;
     Type type() const override;
@@ -187,7 +190,7 @@ public:
 
     static constexpr Type TYPE = Type::CONDITION;
 
-    Condition(size_t line, JumpCond cond, bool negate);
+    Condition(JumpCond cond, bool negate, Origin origin);
 
     TokenPtr clone() const override;
     Type type() const override;
@@ -200,7 +203,7 @@ public:
 
     Register value;
 
-    DataRegisterArg(size_t line, Register value);
+    DataRegisterArg(Register value, Origin origin);
 
     TokenPtr clone() const override;
     Type type() const override;
@@ -221,7 +224,7 @@ public:
 
     Value value;
 
-    WideRegisterArg(size_t line, Value value);
+    WideRegisterArg(Value value, Origin origin);
 
     TokenPtr clone() const override;
     Type type() const override;
@@ -239,7 +242,7 @@ public:
 
     Value value;
 
-    Directive(size_t line, Value value);
+    Directive(Value value, Origin origin);
 
     TokenPtr clone() const override;
     Type type() const override;
@@ -252,7 +255,7 @@ public:
     std::string value;
     size_t address;
 
-    LabelArg(size_t line, std::string&& value);
+    LabelArg(std::string&& value, Origin origin);
 
     TokenPtr clone() const override;
     Type type() const override;
@@ -264,12 +267,12 @@ public:
 
     std::string value;
 
-    LabelDeclaration(size_t line, std::string&& value);
+    LabelDeclaration(std::string&& value, Origin origin);
 
     TokenPtr clone() const override;
     Type type() const override;
 };
 
-extern const std::unordered_map<std::string, TokenPtr(*)(size_t line)> KEYWORDS;
+extern const std::unordered_map<std::string, TokenPtr(*)(Origin line)> KEYWORDS;
 
 class Program parse(const std::string& str);

@@ -1,5 +1,6 @@
 #include "../inc/error.hpp"
 
-AssemblerError::AssemblerError(const std::string& what) :
+AssemblerError::AssemblerError(Origin origin, const std::string& what) :
+    origin(origin),
     std::runtime_error(what)
 {}

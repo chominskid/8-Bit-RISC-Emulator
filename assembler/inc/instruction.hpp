@@ -23,7 +23,6 @@ public:
     Signature(const Signature& other);
 
     bool operator==(const Signature& other) const;
-    std::string to_string() const;
 };
 
 struct Encoder {

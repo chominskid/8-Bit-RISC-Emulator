@@ -1,13 +1,14 @@
 #include "../inc/parser.hpp"
 #include <format>
 
-Token::Token(size_t line) : line(line)
+Token::Token(Origin origin) :
+    origin(origin)
 {}
 
 Token::~Token() = default;
 
 TokenPtr Token::clone() const {
-    return std::make_unique<Token>(line);
+    return std::make_unique<Token>(origin);
 }
 
 Token::Type Token::type() const {
@@ -16,23 +17,23 @@ Token::Type Token::type() const {
 
 
 
-Data::Data(size_t line) :
+Data::Data(Origin origin) :
     data(),
-    Token(line)
+    Token(origin)
 {}
 
-Data::Data(std::vector<uint8_t>&& data, size_t line) :
+Data::Data(std::vector<uint8_t>&& data, Origin origin) :
     data(std::forward<std::vector<uint8_t>>(data)),
-    Token(line)
+    Token(origin)
 {}
 
-Data::Data(const std::vector<uint8_t>& data, size_t line) :
+Data::Data(const std::vector<uint8_t>& data, Origin origin) :
     data(data),
-    Token(line)
+    Token(origin)
 {}
 
 TokenPtr Data::clone() const {
-    return std::make_unique<Data>(data, line);
+    return std::make_unique<Data>(data, origin);
 }
 
 Token::Type Data::type() const {
@@ -60,15 +61,15 @@ std::string Data::to_string() const {
 
 
 
-IntegerArg::IntegerArg(size_t line, std::string&& value, uint8_t base, bool negative) :
+IntegerArg::IntegerArg(std::string&& value, uint8_t base, bool negative, Origin origin) :
     value(std::forward<std::string>(value)),
     base(base),
     negative(negative),
-    Token(line)
+    Token(origin)
 {}
 
 TokenPtr IntegerArg::clone() const {
-    return std::make_unique<IntegerArg>(line, std::string(value), base, negative);
+    return std::make_unique<IntegerArg>(std::string(value), base, negative, origin);
 }
 
 Token::Type IntegerArg::type() const {
@@ -88,13 +89,13 @@ std::string IntegerArg::to_string() const {
 
 
 
-Opcode::Opcode(size_t line, Value value) :
+Opcode::Opcode(Value value, Origin origin) :
     value(value),
-    Token(line)
+    Token(origin)
 {}
 
 TokenPtr Opcode::clone() const {
-    return std::make_unique<Opcode>(line, value);
+    return std::make_unique<Opcode>(value, origin);
 }
 
 Token::Type Opcode::type() const {
@@ -103,14 +104,14 @@ Token::Type Opcode::type() const {
 
 
 
-Condition::Condition(size_t line, JumpCond cond, bool negate) :
+Condition::Condition(JumpCond cond, bool negate, Origin origin) :
     cond(cond),
     negate(negate),
-    Token(line)
+    Token(origin)
 {}
 
 TokenPtr Condition::clone() const {
-    return std::make_unique<Condition>(line, cond, negate);
+    return std::make_unique<Condition>(cond, negate, origin);
 }
 
 Token::Type Condition::type() const {
@@ -119,13 +120,13 @@ Token::Type Condition::type() const {
 
 
 
-DataRegisterArg::DataRegisterArg(size_t line, Register value) :
+DataRegisterArg::DataRegisterArg(Register value, Origin origin) :
     value(value),
-    Token(line)
+    Token(origin)
 {}
 
 TokenPtr DataRegisterArg::clone() const {
-    return std::make_unique<DataRegisterArg>(line, value);
+    return std::make_unique<DataRegisterArg>(value, origin);
 }
 
 Token::Type DataRegisterArg::type() const {
@@ -134,13 +135,13 @@ Token::Type DataRegisterArg::type() const {
 
 
 
-WideRegisterArg::WideRegisterArg(size_t line, Value value) :
+WideRegisterArg::WideRegisterArg(Value value, Origin origin) :
     value(value),
-    Token(line)
+    Token(origin)
 {}
 
 TokenPtr WideRegisterArg::clone() const {
-    return std::make_unique<WideRegisterArg>(line, value);
+    return std::make_unique<WideRegisterArg>(value, origin);
 }
 
 Token::Type WideRegisterArg::type() const {
@@ -149,13 +150,13 @@ Token::Type WideRegisterArg::type() const {
 
 
 
-Directive::Directive(size_t line, Value value) :
+Directive::Directive(Value value, Origin origin) :
     value(value),
-    Token(line)
+    Token(origin)
 {}
 
 TokenPtr Directive::clone() const {
-    return std::make_unique<Directive>(line, value);
+    return std::make_unique<Directive>(value, origin);
 }
 
 Token::Type Directive::type() const {
@@ -164,13 +165,13 @@ Token::Type Directive::type() const {
 
 
 
-LabelArg::LabelArg(size_t line, std::string&& value) :
+LabelArg::LabelArg(std::string&& value, Origin origin) :
     value(std::forward<std::string>(value)),
-    Token(line)
+    Token(origin)
 {}
 
 TokenPtr LabelArg::clone() const {
-    return std::make_unique<LabelArg>(line, std::string(value));
+    return std::make_unique<LabelArg>(std::string(value), origin);
 }
 
 Token::Type LabelArg::type() const {
@@ -179,13 +180,13 @@ Token::Type LabelArg::type() const {
 
 
 
-LabelDeclaration::LabelDeclaration(size_t line, std::string&& value) :
+LabelDeclaration::LabelDeclaration(std::string&& value, Origin origin) :
     value(std::forward<std::string>(value)),
-    Token(line)
+    Token(origin)
 {}
 
 TokenPtr LabelDeclaration::clone() const {
-    return std::make_unique<LabelDeclaration>(line, std::string(value));
+    return std::make_unique<LabelDeclaration>(std::string(value), origin);
 }
 
 Token::Type LabelDeclaration::type() const {
