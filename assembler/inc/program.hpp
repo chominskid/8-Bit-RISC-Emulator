@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "memorymap.hpp"
 #include "parser.hpp"
 #include "instruction.hpp"
 
@@ -46,5 +47,5 @@ public:
     void add_instruction(std::vector<std::unique_ptr<Token>>&& args);
     void add_label(std::string&& value, Origin origin);
 
-    std::vector<uint8_t> assemble();
+    MemoryMap assemble();
 };

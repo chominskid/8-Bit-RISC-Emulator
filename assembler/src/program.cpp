@@ -37,8 +37,8 @@ Program::Placeholder::Placeholder(std::optional<size_t> fixed_address, const std
     instruction(nullptr),
     origin(origin),
     args(),
-    final(true),
-    last_output(data)
+    last_output(data),
+    final(true)
 {}
 
 Program::Placeholder::Placeholder(Placeholder&& other) :
@@ -163,7 +163,7 @@ bool Program::try_assemble_pass() {
     return true;
 }
 
-std::vector<uint8_t> Program::assemble() {
+MemoryMap Program::assemble() {
     uint64_t pass_count = 0;
     for (;;) {
         ++pass_count;
@@ -171,12 +171,11 @@ std::vector<uint8_t> Program::assemble() {
             break;
     }
 
-    std::vector<uint8_t> output;
+    MemoryMap output;
     for (size_t i = 0; i < program.size(); ++i) {
-        const size_t req_size = program[i].tentative_address + program[i].last_output.size();
-        if (output.size() < req_size)
-            output.resize(req_size);
-        std::copy(program[i].last_output.begin(), program[i].last_output.end(), &output[program[i].tentative_address]);
+        if (program[i].tentative_address != output.curr_addr())
+            output.set_address(program[i].tentative_address);
+        output.append(program[i].last_output.begin(), program[i].last_output.end());
     }
 
     std::cout << "Passes: " << pass_count << '\n';

@@ -6,7 +6,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <type_traits>
-#include <unordered_map>
 
 using ssize_t = std::make_signed_t<size_t>;
 
@@ -896,7 +895,7 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .encoders = {
             { .size = 2, .encode = [] (size_t address, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 const Condition& cond = args[0]->get<Condition>();
-                encode_rjmp_label(false, address, cond.negate, cond.cond, args[1]);
+                return encode_rjmp_label(false, address, cond.negate, cond.cond, args[1]);
             }},
             { .size = 4, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 const Condition& cond = args[0]->get<Condition>();

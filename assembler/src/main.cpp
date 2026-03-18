@@ -106,9 +106,8 @@ int main(int argc, const char* argv[]) {
     const std::string file = read_file(*input_filename);
     try {
         Program program = parse(file);
-        const std::vector<uint8_t> result = program.assemble();
-        std::ofstream output(*output_filename, output.binary);
-        output.write(reinterpret_cast<const char*>(result.data()), result.size());
+        const MemoryMap output = program.assemble();
+        output.write(*output_filename);
     } catch (const AssemblerError& error) {
         print_origin(file, error.origin);
         std::cout << error.what() << '\n';
