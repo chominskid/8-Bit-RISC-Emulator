@@ -6,6 +6,7 @@
 #include <ranges>
 #include <vector>
 
+#include "../../../common/inc/memorymap.hpp"
 #include "spinlock.hpp"
 
 enum class Endian {
@@ -82,6 +83,16 @@ public:
     requires std::integral<std::remove_cvref_t<std::ranges::range_value_t<R>>>
     void debug_write(size_t address, const R& range) {
         debug_write<E>(address, std::ranges::cbegin(range), std::ranges::cend(range));
+    }
+
+    void debug_write(const MemoryMap& map) {
+        size_t address = 0;
+        for (const auto& section: map) {
+            address = section.first;
+            for (uint8_t byte: section.second) {
+                debug_write(address++, byte);
+            }
+        }
     }
 };
 

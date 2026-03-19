@@ -12,7 +12,12 @@ private:
     typename decltype(_map)::iterator _curr;
 
 public:
+    using const_iterator = decltype(_map)::const_iterator;
+
     MemoryMap();
+
+    const_iterator begin() const;
+    const_iterator end() const;
 
     void set_address(size_t address);
     size_t curr_addr() const;
@@ -28,4 +33,5 @@ public:
     }
 
     void write(const std::string& filename) const;
+    void read(const std::string& filename);
 };

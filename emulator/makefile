@@ -1,9 +1,9 @@
 TARGET := emulator
 
 CXX := g++
-CXXFLAGS := -Wall -Wextra -O3 -std=c++20
+CXXFLAGS := -Wall -Wextra -Og -g -std=c++20
 
-SRCS_COMMON := $(shell find src/emulator src/utils -name "*.cpp")
+SRCS_COMMON := $(shell find src/emulator src/utils -name "*.cpp") ../common/src/memorymap.cpp
 OBJS_COMMON := $(SRCS_COMMON:.cpp=.o)
 
 SRCS_FRONTEND := $(shell find src/frontend -name "*.cpp")

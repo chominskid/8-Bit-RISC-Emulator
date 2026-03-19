@@ -878,13 +878,13 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
             { .size = 2, .encode = [] (size_t address, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 return encode_rjmp_label(true, address, args[0]);
             }},
-            { .size = 4, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+            { .size = 6, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 return encode_p_jmp_label_auto(true, encode_mov_wreg_label_6_6, args[1], args[0]);
             }},
-            { .size = 6, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+            { .size = 8, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 return encode_p_jmp_label_auto(true, encode_mov_wreg_label_6_8, args[1], args[0]);
             }},
-            { .size = 8, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+            { .size = 10, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 return encode_p_jmp_label_auto(true, encode_mov_wreg_label_8_8, args[1], args[0]);
             }},
         }
@@ -897,15 +897,15 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
                 const Condition& cond = args[0]->get<Condition>();
                 return encode_rjmp_label(false, address, cond.negate, cond.cond, args[1]);
             }},
-            { .size = 4, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+            { .size = 6, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 const Condition& cond = args[0]->get<Condition>();
                 return encode_p_jmp_label_auto(false, cond.negate, cond.cond, encode_mov_wreg_label_6_6, args[2], args[1]);
             }},
-            { .size = 6, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+            { .size = 8, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 const Condition& cond = args[0]->get<Condition>();
                 return encode_p_jmp_label_auto(false, cond.negate, cond.cond, encode_mov_wreg_label_6_8, args[2], args[1]);
             }},
-            { .size = 8, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+            { .size = 10, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 const Condition& cond = args[0]->get<Condition>();
                 return encode_p_jmp_label_auto(false, cond.negate, cond.cond, encode_mov_wreg_label_8_8, args[2], args[1]);
             }},
@@ -994,7 +994,7 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 const auto& cond = args[0]->get<Condition>();
-                return encode_jmp_wreg_off(false, cond.negate, cond.cond, args[0], args[1]);
+                return encode_jmp_wreg_off(false, cond.negate, cond.cond, args[1], args[2]);
             }
         }}
     },
@@ -1004,7 +1004,7 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 const auto& cond = args[0]->get<Condition>();
-                return encode_jmp_wreg(true, cond.negate, cond.cond, args[0]);
+                return encode_jmp_wreg(true, cond.negate, cond.cond, args[1]);
             }
         }}
     },
@@ -1024,7 +1024,7 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 const auto& cond = args[0]->get<Condition>();
-                return encode_rjmp_off(false, cond.negate, cond.cond, args[0]);
+                return encode_rjmp_off(false, cond.negate, cond.cond, args[1]);
             }},
         }
     },

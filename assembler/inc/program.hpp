@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "memorymap.hpp"
+#include "../../common/inc/memorymap.hpp"
 #include "parser.hpp"
 #include "instruction.hpp"
 

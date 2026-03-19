@@ -4,7 +4,7 @@ CXX := g++
 CXXFLAGS := -Wall -Wextra -O3 -std=c++20
 LIBS := 
 
-SRCS := $(shell find . -name "*.cpp")
+SRCS := $(shell find . -name "*.cpp") ../common/src/memorymap.cpp
 OBJS := $(SRCS:.cpp=.o)
 
 all: $(TARGET)

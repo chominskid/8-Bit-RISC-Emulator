@@ -3,6 +3,7 @@
 #include <format>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 Program::Placeholder::Placeholder(std::optional<size_t> fixed_address, const Instruction& instruction, std::vector<TokenPtr>&& args, Origin origin):
     fixed_address(fixed_address),
