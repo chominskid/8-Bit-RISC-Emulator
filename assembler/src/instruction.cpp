@@ -657,6 +657,15 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         }
     },
     Instruction {
+        .signature = { Opcode::Value::ASR, { Token::Type::DATA_REGISTER, Token::Type::DATA_REGISTER } },
+        .independent = true,
+        .encoders = {
+            { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+                return encode_reg_reg_alu(ALUOp::ASR, args);
+            }},
+        }
+    },
+    Instruction {
         .signature = { Opcode::Value::MOV, { Token::Type::DATA_REGISTER, Token::Type::DATA_REGISTER } },
         .independent = true,
         .encoders = {
@@ -771,6 +780,15 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
         .encoders = {
             { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 return encode_reg_imm_shift(ALUOp::SHR, args);
+            }},
+        }
+    },
+    Instruction {
+        .signature = { Opcode::Value::ASR, { Token::Type::DATA_REGISTER, Token::Type::INTEGER } },
+        .independent = true,
+        .encoders = {
+            { .size = 2, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+                return encode_reg_imm_shift(ALUOp::ASR, args);
             }},
         }
     },

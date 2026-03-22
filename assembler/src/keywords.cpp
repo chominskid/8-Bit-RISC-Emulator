@@ -15,6 +15,7 @@ const std::unordered_map<std::string, TokenPtr(*)(Origin origin)> KEYWORDS {
     { "xor", [] (Origin origin) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::XOR, origin); } },
     { "shl", [] (Origin origin) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::SHL, origin); } },
     { "shr", [] (Origin origin) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::SHR, origin); } },
+    { "asr", [] (Origin origin) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::ASR, origin); } },
     { "mov", [] (Origin origin) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::MOV, origin); } },
     { "mvh", [] (Origin origin) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::MVH, origin); } },
     { "jmp", [] (Origin origin) -> TokenPtr { return std::make_unique<Opcode>(Opcode::Value::JMP, origin); } },

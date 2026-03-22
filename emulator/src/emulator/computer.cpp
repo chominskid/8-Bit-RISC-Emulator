@@ -25,8 +25,8 @@ void Computer::fetch_stage() {
 }
 
 void Computer::decode_alu_op() {
-    static constexpr std::bitset<16> ALU_WRITE { 0b1011011111001111 };
-    static constexpr std::bitset<16> ALU_SETF  { 0b1100011111111111 };
+    static constexpr std::bitset<16> ALU_WRITE { 0b1011111111001111 };
+    static constexpr std::bitset<16> ALU_SETF  { 0b1100111111111111 };
     state.alu_op = (state.instruction & *Encoding::O_MASK) >> *Encoding::O_SHIFT;
     state.alu_write = ALU_WRITE.test(state.alu_op);
     state.alu_set_flags = ALU_SETF.test(state.alu_op);
@@ -229,28 +229,24 @@ void Computer::execute_stage() {
         res = (state.alu_op1 & 0xFF00) | ((state.alu_op1 << (state.alu_op2 & 0x0007)) & 0x00FF);
         break;
     case *ALUOp::SHR:
-        res = (state.alu_op1 & 0xFF00) | ((state.alu_op1 >> (state.alu_op2 & 0x0007)) & 0x00FF);
+    case *ALUOp::ASR: {
+        const int n = state.alu_op2 & 0x0007;
+        res = (state.alu_op1 & 0xFF00) | ((state.alu_op1 >> n) & 0x00FF);
+        if (state.alu_op == *ALUOp::ASR && (state.alu_op1 & 0x0080) && n != 0)
+            res |= 0xFF << (8 - n);
         break;
+    }
     case *ALUOp::MOV:
         res = state.alu_op2;
         break;
     case *ALUOp::MOVH:
         res = (state.alu_op1 & 0x003F) | ((state.alu_op2 << 6) & 0x00C0);
         break;
-    case *ALUOp::SEB:
-        res = state.alu_op1;
-        set_bit(res, state.alu_op2 & 0x0007, state.alu_op2 & 0x0008);
-        break;
-    case *ALUOp::TSB:
-        break;
     default:
         throw_eil();
     }
 
     switch (state.alu_op) { // set z flag
-    case *ALUOp::TSB:
-        set_bit(sr, *Status::Z_SHIFT, get_bit(state.alu_op1, state.alu_op2 & 0x0007));
-        break;
     case *ALUOp::ADC:
     case *ALUOp::SBC:
     case *ALUOp::CMC:
@@ -261,14 +257,8 @@ void Computer::execute_stage() {
         break;
     }
 
-    switch (state.alu_op) { // set n flag
-    case *ALUOp::TSB:
-        set_bit(sr, *Status::N_SHIFT, get_bit(state.alu_op2, state.alu_op2 & 0x0038));
-        break;
-    default:
-        set_bit(sr, *Status::N_SHIFT, res & 0x0080);
-        break;
-    }
+    // set n flag
+    set_bit(sr, *Status::N_SHIFT, res & 0x0080);
 
     state.result = res;
 

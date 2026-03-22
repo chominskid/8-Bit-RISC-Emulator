@@ -79,11 +79,9 @@ enum class ALUOp {
     XOR,
     SHL,
     SHR,
-    _,
+    ASR,
     MOV,
     MOVH,
-    TSB,
-    SEB,
 };
 
 enum class MemOp {

@@ -143,6 +143,7 @@ public:
         XOR,
         SHL,
         SHR,
+        ASR,
         MOV,
         MVH,
 
