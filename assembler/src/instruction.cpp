@@ -29,6 +29,17 @@ Encoder::Result::Result(Result&& other) :
         std::construct_at(&_error, std::move(other._error));
 }
 
+Encoder::Result::Result(const std::vector<uint8_t>& data) :
+    _size(data.size())
+{
+    if (_size > sizeof(_sdata)) {
+        std::construct_at(&_data, std::make_unique<uint8_t[]>(_size));
+        std::copy(data.begin(), data.end(), &_data[0]);
+    } else {
+        std::copy(&data[0], &data[_size], _sdata);
+    }
+}
+
 Encoder::Result::~Result() {
     if (_size == ERROR)
         std::destroy_at(&_error);
@@ -878,13 +889,13 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
             { .size = 2, .encode = [] (size_t address, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 return encode_rjmp_label(false, address, args[0]);
             }},
-            { .size = 4, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+            { .size = 6, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 return encode_p_jmp_label_auto(false, encode_mov_wreg_label_6_6, args[1], args[0]);
             }},
-            { .size = 6, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+            { .size = 8, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 return encode_p_jmp_label_auto(false, encode_mov_wreg_label_6_8, args[1], args[0]);
             }},
-            { .size = 8, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+            { .size = 10, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 return encode_p_jmp_label_auto(false, encode_mov_wreg_label_8_8, args[1], args[0]);
             }},
         }
@@ -936,15 +947,15 @@ const std::unordered_set<Instruction, SignatureHasher, SignatureEqual> INSTRUCTI
             { .size = 2, .encode = [] (size_t address, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 return encode_rjmp_label(true, address, args[0]);
             }},
-            { .size = 4, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+            { .size = 6, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 const Condition& cond = args[0]->get<Condition>();
                 return encode_p_jmp_label_auto(true, cond.negate, cond.cond, encode_mov_wreg_label_6_6, args[1], args[0]);
             }},
-            { .size = 6, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+            { .size = 8, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 const Condition& cond = args[0]->get<Condition>();
                 return encode_p_jmp_label_auto(true, cond.negate, cond.cond, encode_mov_wreg_label_6_8, args[1], args[0]);
             }},
-            { .size = 8, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
+            { .size = 10, .encode = [] (size_t, const std::vector<TokenPtr>& args) -> Encoder::Result {
                 const Condition& cond = args[0]->get<Condition>();
                 return encode_p_jmp_label_auto(true, cond.negate, cond.cond, encode_mov_wreg_label_8_8, args[1], args[0]);
             }},

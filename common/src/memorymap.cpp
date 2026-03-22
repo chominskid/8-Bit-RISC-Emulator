@@ -8,41 +8,16 @@
 
 template <typename T>
 void bin_write(std::ofstream& file, T x) {
-    using U = std::make_unsigned_t<T>;
-    static constexpr size_t N = std::numeric_limits<U>::digits;
-
-    if constexpr (std::endian::native == std::endian::little) {
-        file.write(reinterpret_cast<const char*>(&x), sizeof(T));
-    } else {
-        U _x = x;
-        for (size_t i = 0; i < sizeof(U); ++i) {
-            const unsigned char byte = _x;
-            file.write(reinterpret_cast<const char*>(&byte), 1);
-            _x >>= 8;
-        }
-    }
+    file.write(reinterpret_cast<const char*>(&x), sizeof(T));
 }
 
 template <typename T>
 T bin_read(std::ifstream& file) {
     using U = std::make_unsigned_t<T>;
-    static constexpr size_t N = std::numeric_limits<U>::digits;
 
-    if constexpr (std::endian::native == std::endian::little) {
-        U x;
-        file.read(reinterpret_cast<char*>(&x), sizeof(U));
-        return x;
-    } else {
-        U x = 0;
-        for (size_t i = 0; i < sizeof(U); ++i) {
-            x <<= 8;
-            int c = file.get();
-            if (c == std::char_traits<char>::eof())
-                throw std::runtime_error("IO error.");
-            x |= (unsigned char)c;
-        }
-        return x;
-    }
+    U x;
+    file.read(reinterpret_cast<char*>(&x), sizeof(U));
+    return x;
 }
 
 MemoryMap::MemoryMap() {

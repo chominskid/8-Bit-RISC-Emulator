@@ -18,18 +18,18 @@ Token::Type Token::type() const {
 
 
 Data::Data(Origin origin) :
-    data(),
-    Token(origin)
+    Token(origin),
+    data()
 {}
 
 Data::Data(std::vector<uint8_t>&& data, Origin origin) :
-    data(std::forward<std::vector<uint8_t>>(data)),
-    Token(origin)
+    Token(origin),
+    data(std::forward<std::vector<uint8_t>>(data))
 {}
 
 Data::Data(const std::vector<uint8_t>& data, Origin origin) :
-    data(data),
-    Token(origin)
+    Token(origin),
+    data(data)
 {}
 
 TokenPtr Data::clone() const {
@@ -62,10 +62,10 @@ std::string Data::to_string() const {
 
 
 IntegerArg::IntegerArg(std::string&& value, uint8_t base, bool negative, Origin origin) :
+    Token(origin),
     value(std::forward<std::string>(value)),
     base(base),
-    negative(negative),
-    Token(origin)
+    negative(negative)
 {}
 
 TokenPtr IntegerArg::clone() const {
@@ -90,8 +90,8 @@ std::string IntegerArg::to_string() const {
 
 
 Opcode::Opcode(Value value, Origin origin) :
-    value(value),
-    Token(origin)
+    Token(origin),
+    value(value)
 {}
 
 TokenPtr Opcode::clone() const {
@@ -105,9 +105,9 @@ Token::Type Opcode::type() const {
 
 
 Condition::Condition(JumpCond cond, bool negate, Origin origin) :
+    Token(origin),
     cond(cond),
-    negate(negate),
-    Token(origin)
+    negate(negate)
 {}
 
 TokenPtr Condition::clone() const {
@@ -121,8 +121,8 @@ Token::Type Condition::type() const {
 
 
 DataRegisterArg::DataRegisterArg(Register value, Origin origin) :
-    value(value),
-    Token(origin)
+    Token(origin),
+    value(value)
 {}
 
 TokenPtr DataRegisterArg::clone() const {
@@ -136,8 +136,8 @@ Token::Type DataRegisterArg::type() const {
 
 
 WideRegisterArg::WideRegisterArg(Value value, Origin origin) :
-    value(value),
-    Token(origin)
+    Token(origin),
+    value(value)
 {}
 
 TokenPtr WideRegisterArg::clone() const {
@@ -151,8 +151,8 @@ Token::Type WideRegisterArg::type() const {
 
 
 Directive::Directive(Value value, Origin origin) :
-    value(value),
-    Token(origin)
+    Token(origin),
+    value(value)
 {}
 
 TokenPtr Directive::clone() const {
@@ -166,8 +166,8 @@ Token::Type Directive::type() const {
 
 
 LabelArg::LabelArg(std::string&& value, Origin origin) :
-    value(std::forward<std::string>(value)),
-    Token(origin)
+    Token(origin),
+    value(std::forward<std::string>(value))
 {}
 
 TokenPtr LabelArg::clone() const {
@@ -181,8 +181,8 @@ Token::Type LabelArg::type() const {
 
 
 LabelDeclaration::LabelDeclaration(std::string&& value, Origin origin) :
-    value(std::forward<std::string>(value)),
-    Token(origin)
+    Token(origin),
+    value(std::forward<std::string>(value))
 {}
 
 TokenPtr LabelDeclaration::clone() const {

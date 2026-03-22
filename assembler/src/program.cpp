@@ -63,6 +63,8 @@ bool Program::Placeholder::try_encode() {
             throw_failure();
         return false;
     } else {
+        if (result.size() != tentative_size())
+            throw std::runtime_error(std::format("{} != {}", result.size(), tentative_size()));
         last_output = std::move(result);
         return true;
     }
