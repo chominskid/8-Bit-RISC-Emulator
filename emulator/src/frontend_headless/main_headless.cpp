@@ -131,8 +131,12 @@ int main(int argc, const char* argv[]) {
     computer.attach_memory(memory_interface);
     computer.debug_init();
 
-    memory_interface->debug_write<Endian::LITTLE>(0x0000, read_binary("./programs/DEBUG_BOOTLOADER.bin"));
-    memory_interface->debug_write<Endian::BIG>(0x0300, read_binary(*program_file));
+    MemoryMap map;
+    map.read(argv[1]);
+    memory_interface->debug_write(map);
+
+    // memory_interface->debug_write<Endian::LITTLE>(0x0000, read_binary("./DEBUG_BOOTLOADER.bin"));
+    // memory_interface->debug_write<Endian::BIG>(0x0300, read_binary(*program_file));
 
     computer.reset();
 
