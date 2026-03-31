@@ -489,8 +489,6 @@ std::string Computer::debug_state() const {
     s << "store: " << hr_num(copy.store_val) << '\n';
     s << '\n';
     s << "ra:    " << hr_num(bytes_to_num<uint16_t>(&copy.registers[*Register::RA_L])) << '\n';
-    s << "ra.l:  " << hr_num(copy.registers[*Register::RA_L]) << '\n';
-    s << "ra.h:  " << hr_num(copy.registers[*Register::RA_H]) << '\n';
     s << "sr:    " << hr_data(copy.registers[*Register::SR]) << '\n';
     s << "sp:    " << hr_num(copy.registers[*Register::SP]) << '\n';
     s << "fp/ga: " << hr_num(copy.registers[*Register::FP]) << '\n';
@@ -498,16 +496,8 @@ std::string Computer::debug_state() const {
     s << "gc:    " << hr_num(copy.registers[*Register::GC]) << '\n';
     s << "gd:    " << hr_num(copy.registers[*Register::GD]) << '\n';
     s << "ge:    " << hr_num(bytes_to_num<uint16_t>(&copy.registers[*Register::GE_L])) << '\n';
-    s << "ge.l:  " << hr_num(copy.registers[*Register::GE_L]) << '\n';
-    s << "ge.h:  " << hr_num(copy.registers[*Register::GE_H]) << '\n';
     s << "gf:    " << hr_num(bytes_to_num<uint16_t>(&copy.registers[*Register::GF_L])) << '\n';
-    s << "gf.l:  " << hr_num(copy.registers[*Register::GF_L]) << '\n';
-    s << "gf.h:  " << hr_num(copy.registers[*Register::GF_H]) << '\n';
     s << "gg:    " << hr_num(bytes_to_num<uint16_t>(&copy.registers[*Register::GG_L])) << '\n';
-    s << "gg.l:  " << hr_num(copy.registers[*Register::GG_L]) << '\n';
-    s << "gg.h:  " << hr_num(copy.registers[*Register::GG_H]) << '\n';
     s << "gh:    " << hr_num(bytes_to_num<uint16_t>(&copy.registers[*Register::GH_L])) << '\n';
-    s << "gh.l:  " << hr_num(copy.registers[*Register::GH_L]) << '\n';
-    s << "gh.h:  " << hr_num(copy.registers[*Register::GH_H]) << '\n';
     return s.str();
 }
