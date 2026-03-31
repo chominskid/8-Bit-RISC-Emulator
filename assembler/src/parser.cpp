@@ -161,7 +161,7 @@ Program parse(const std::string& str) {
     };
 
     auto parse_byte_directive = [&] () {
-        Origin origin{current_statement.front()->origin.start, current_statement.back()->origin.end};
+        const Origin origin{current_statement.front()->origin.start, current_statement.back()->origin.end};
         std::vector<uint8_t> data;
         for (size_t i = 1; i < current_statement.size(); ++i) {
             switch (current_statement[i]->type()) {
@@ -174,10 +174,32 @@ Program parse(const std::string& str) {
                 break;
             }
             default:
-                throw AssemblerError(current_statement[i]->origin, "Invalid argument to byte directive.");
+                throw AssemblerError(current_statement[i]->origin, "Invalid argument for byte directive.");
             }
         }
         program.add_data(data, origin);
+    };
+
+    auto parse_bytes_directive = [&] () {
+        const Origin origin{current_statement.front()->origin.start, current_statement.back()->origin.end};
+        if (current_statement.size() == 1)
+            throw AssemblerError(origin, "Expected size for bytes directive.");
+        else if (current_statement.size() > 3)
+            throw AssemblerError(origin, "Too many arguments for bytes directive.");
+
+        if (current_statement[1]->type() != Token::Type::INTEGER)
+            throw AssemblerError(current_statement[1]->origin, "Invalid size for bytes directive.");
+
+        const size_t size = current_statement[1]->get<IntegerArg>().as<size_t>();
+        
+        uint8_t fill = 0;
+        if (current_statement.size() == 3) {
+            if (current_statement[2]->type() != Token::Type::INTEGER)
+                throw AssemblerError(current_statement[i]->origin, "Invalid default value argument for bytes directive.");
+            fill = current_statement[2]->get<IntegerArg>().as<uint8_t>();
+        }
+
+        program.add_data(std::vector<uint8_t>(size, fill), origin);
     };
 
     auto parse_directive = [&] (Directive::Value d) {
@@ -187,6 +209,9 @@ Program parse(const std::string& str) {
             break;
         case Directive::Value::BYTE:
             parse_byte_directive();
+            break;
+        case Directive::Value::BYTES:
+            parse_bytes_directive();
             break;
         default:
             break;
